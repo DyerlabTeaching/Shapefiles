@@ -54,9 +54,7 @@ system( "ls" )
 
 ## Lines
 
-We've covered [points](https://dyerlab.github.io/ENVS-Lectures/spatial/spatial_points/slides.html#1) and now if we put them together in a sequence, we get lines.  They are taken in the order given.  
-
-Instead of loading these in manually, I'm going to load in the shapefile with the roads.  To load in shapefiles, we use the `st_read()` function and pass it the .shp file.
+We've covered [points](https://dyerlabteaching.github.io/Spatial-Points/slides.html#/title-slide) and now if we put them together in a sequence, we get lines.  They are taken in the order given, just like when we were plotting polygons using `geom_polygon()`.  Instead of loading these in manually, I'm going to load in the shapefile with the roads.  To load in shapefiles, we use the `st_read()` function and pass it the .shp file.
 
 ```{r}
 roads <- st_read( "Centerlines-shp/tran_Carriageway.shp" ) 
@@ -117,6 +115,7 @@ Polygons are simply lines whose first and last point are the same (e.g., they cl
 As a first approximation, we can grab polygon data from `ggplot` itself.  Here I pull in the `data.frame` representing the counties of Virginia.
 
 ```{r}
+library( maps )
 map_data( "county", "virginia") %>%
   select( Longitude = long,
           Latitude = lat,
@@ -273,8 +272,8 @@ ggplot( theFan ) +
 So we will close this out by looking at a few different operations that we can use for polygons.  First, I'm going to load in the road shapefile (that was named by some random sequence of letters) and reproject it.
 
 ```{r}
-unzip( "./Roads.zip",)
-st_read("Centerlines-shp/tran_Carriageway.shp") -> roads
+#unzip( "./Roads.zip",)
+#st_read("Centerlines-shp/tran_Carriageway.shp") -> roads
 head( roads, n=3)
 ```
 
