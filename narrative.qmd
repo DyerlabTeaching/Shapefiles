@@ -272,17 +272,7 @@ ggplot( theFan ) +
 So we will close this out by looking at a few different operations that we can use for polygons.  First, I'm going to load in the road shapefile (that was named by some random sequence of letters) and reproject it.
 
 ```{r}
-#unzip( "./Roads.zip",)
-#st_read("Centerlines-shp/tran_Carriageway.shp") -> roads
 head( roads, n=3)
-```
-
-Let's clean it up a bit.
-
-```{r}
-roads %>%
-  select( -CreatedBy, -CreatedDat, -EditBy, -EditDate) -> roads
-head( roads )
 ```
 
 ```{r}
@@ -290,8 +280,6 @@ plot( theFan$geometry, lwd=2 )
 fanRoads <- st_crop( roads, st_bbox( theFan ))
 plot( fanRoads$geometry, col="blue", cex=0.5, add=TRUE )
 ```
-
-
 
 Let's isolate one of the main polygons in `theFan` data set.  The target one below is indicated by `OBJECTID=368`.
 
