@@ -9,6 +9,22 @@ execute:
 
 
 
+## Learning Objectives 
+
+This section covers the following topics:
+
+- Creation of `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
+
+- Loading map polygons from `get_data()`  
+
+- Importing data from ESRI shapefile.  
+
+- Implementing Spatial Joins.
+
+
+
+
+
 # Lines {background-color="black" background-image="media/contour.png" background-size="initial" background-position="right"}
 
 ```{r startup, include=FALSE}
@@ -20,33 +36,12 @@ knitr::opts_chunk$set( fig.retina = 3,
                        warning = FALSE, 
                        message = FALSE,
                        fig.align="center")
-theme_set( theme_minimal( base_size = 22) )
+theme_set( theme_minimal( base_size = 20) )
 ```
 
 
 
-
-
-## Learning Objectives `r fa("leanpub", fill='red')`
-
-This section covers the following topics:
-
-- Creation of `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
-- Loading map polygons from `get_data()`  
-
-- Importing data from ESRI shapefile.  
-
-- Implementing Spatial Joins.
-
-
-
-
-
-
-
-
-
-## Data Sources: *De novo* Creation
+## Data Sources: *De novo* Creation {.scrollable}
 
 It is possible to make data from scratch by entering coordinates directly.
 
@@ -60,7 +55,7 @@ df
                   
 ```
 
-## Data Sources: *De novo* Creation
+## Data Sources: *De novo* Creation  {.scrollable}
 
 To Make to `sf` as `POINT` objects as normal.
 
@@ -71,25 +66,41 @@ pts
 ```
 
 
-## Plotting Points
+## Plotting Points {.smaller}
 
 
 :::: {.columns}
 
-::: {.column width="50%"}
-### GGPLot
+::: {.column width="40%"}
+
+We can easily mix individual aesthetic properties to change the representaion of the points provided by using `geom_sf()`.
+
+&nbsp;
+
 ```{r eval=FALSE}
 ggplot( pts ) + 
   geom_sf( aes(color = id, size=Data)) + 
-  coord_sf()
+  coord_sf() + 
+  theme(axis.text.x = element_text(angle = 45, 
+                                   vjust = 0.5, 
+                                   hjust=1))
 ```
 :::
 
-::: {.column width="50%"}
-```{r echo=FALSE}
+::: {.column width="60%"}
+
+&nbsp;
+
+&nbsp;
+
+```{r}
+#| echo: false
 ggplot( pts ) + 
   geom_sf( aes(color = id, size=Data)) + 
-  coord_sf()
+  coord_sf()  + 
+  theme(axis.text.x = element_text(angle = 45, 
+                                   vjust = 0.5, 
+                                   hjust=1))
 ```
 :::
 
@@ -111,8 +122,14 @@ df %>%
   group_by( id ) %>%
   summarize( Data = mean( Data ) ) %>%
   st_cast("LINESTRING") -> lines 
+```
+
+## &nbsp; {.scrollable}
+
+```{r}
 lines
 ```
+
 
 
 
@@ -121,6 +138,9 @@ lines
 :::: {.columns}
 
 ::: {.column width="50%"}
+
+Just like when we were working with `POINT` objects, we can use both built-in graphing approaches as well as `ggplot()` for visualizing.  Here I'm goint to plot the two line objects using normal graphics. 
+
 ```{r eval=FALSE}
 plot( lines["Data"], 
       col=c("red","green"),
@@ -129,6 +149,11 @@ plot( lines["Data"],
 :::
 
 ::: {.column width="50%"}
+
+&nbsp;
+
+&nbsp;
+
 ```{r echo=FALSE}
 plot( lines["Data"], 
       col=c("red","green"),
@@ -145,16 +170,22 @@ plot( lines["Data"],
 
 ## Operations on `LINESTRING` Objects
 
+Physical length of the `LINESTRING` objects
 
 ```{r}
 st_length( lines )
 ```
 
+:::{.fragment}
+The bounding box around all the lines.
 
 ```{r}
 st_bbox( lines )
 ```
 
+:::{.fragment}
+
+The area of the convex hull encompassing *all* the lines.
 ```{r}
 library( units )
 lines %>% 
@@ -163,9 +194,10 @@ lines %>%
   st_area() %>%
   set_units( km^2 )
 ```
+:::
+:::
 
-
-## Textual Versions of `geometry` Objects
+## Textual Versions of `geometry`
 
 While it is easy to go from text $\to$ `POLYGON`, the same thing can be done going in the opposite direction.
 
@@ -201,15 +233,22 @@ df %>%
   group_by( id ) %>%
   summarize( Data = mean( Data ) ) %>%
   st_cast("POLYGON") -> polygons
+```
+
+
+## &nbsp;
+
+```{r}
 polygons
 ```
 
-## Visualizing Polygon Objects
+
+## Visualizing Polygon Objects {.smaller}
 
 ```{r}
 ggplot( polygons ) + 
-  geom_sf( aes( fill = Data ), alpha=0.75 ) + 
-  coord_sf() 
+  geom_sf( aes( fill = Data ), alpha=0.75 ) + coord_sf() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 ```
 
 ## Polygons From Data Frames
@@ -247,10 +286,8 @@ va_counties %>%
 
 ```{r fig.width=10}
 ggplot( va_counties, aes( Longitude, Latitude) ) + 
-  geom_polygon( aes( group=group ),
-                fill="grey80",
-                color = "black", 
-                size = 0.25) + 
+  geom_polygon( aes( group=group ), fill="grey80",
+                color = "black", size = 0.25) + 
   coord_quickmap()
 ```
 
@@ -260,11 +297,10 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
 ```{r}
 ggplot() + 
   geom_polygon( aes( Longitude, Latitude, group=group ),
-                fill="grey80",
-                color = "black", 
-                size = 0.25, 
-                data=va_counties) +
-  geom_sf( aes( color=Data), lwd=3, data=lines) + 
+                fill="grey80",color = "black", 
+                size = 0.25, data=va_counties) +
+  geom_sf( aes( color=Data), 
+           lwd=3, data=lines) + 
   coord_sf()
 ```
 
@@ -274,14 +310,14 @@ ggplot() +
 
 # Shapefiles 🤷  {background-color="black" background-image="media/contour.png" background-size="initial" background-position="right"}
 
-### The standard format that is neither standard or a file. 
 
+## &nbsp; {background-color="white" background-image="https://github.com/DyerlabTeaching/Shapefiles/raw/main/media/shapefile_definition_chatGPT3.png" background-size="contain" background-position="center"}
 
 
 
 ## Shapefiles
 
-The ESRI *Shapefile* is a common format for packaging vector based data (`POINT`, `LINESTRING`, `POLYGON`, etc.).  
+The ESRI *Shapefile* is a non-standardized format for packaging vector based data (`POINT`, `LINESTRING`, `POLYGON`, etc.).  
 
 However, it is not actually a file but it is a collection of files, which may (or may not) expand directly in the folder or within a subfolder.
 
@@ -348,7 +384,7 @@ You can load it in using `sf::st_read()` and passing it the `.shp` file path to 
 st_read("Zoning_Districts.shp") -> districts 
 ```
 
-## Shapefiles Convert to `sf` Objects
+## Shapefiles Convert to `sf` Objects {.smaller .scrollable}
 
 By default, the data associated with a vector object are put into a `data.frame` and the `geometry` object is properly created.
 
@@ -362,7 +398,7 @@ head( districts, n=2 )
 names( districts )
 ```
 
-:::{.fragment}
+## Simplifying Data
 
 ```{r}
 districts %>% 
@@ -370,7 +406,7 @@ districts %>%
   dplyr::select( -Shape__Are, -Shape__Len) -> districts
 head( districts, n=1)
 ```
-:::
+
 
 ## District Codes
 
@@ -392,7 +428,8 @@ plot( districts["Name"] )
 
 ```{r}
 plot( st_geometry( districts ))
-plot( st_geometry( districts[districts$OBJECTID==530,] ), col='red', add=TRUE )
+plot( st_geometry( districts[districts$OBJECTID==530,] ), 
+      col='red', add=TRUE )
 ```
 
 
@@ -464,35 +501,24 @@ summary( roads )
 
 
 
-## Visualizing
-
-:::: {.columns}
-
-::: {.column width="50%"}
-### Filter Highways & Plot
-```{r eval=FALSE}
+## Visualizing: Filter Highways & Plot
+```{r}
 roads %>%
   filter( StreetType %in% c("Highway", 
                             "Highway Interchange",
                             "Ramp")) -> highways
-plot( highways["SpeedLimit"], col=heat.colors(56) )
 ```
-:::
 
-::: {.column width="50%"}
+## And Plotting
+
 ```{r echo=FALSE}
-roads %>%
-  filter( StreetType %in% c("Highway", 
-                            "Highway Interchange",
-                            "Ramp")) -> highways
 plot( highways["SpeedLimit"], col=heat.colors(56) )
 ```
-:::
-
-::::
 
 
-## Visualizing A Single Entity
+
+
+## Visualizing A Single Entity {.smaller}
 
 :::: {.columns}
 
@@ -502,7 +528,8 @@ plot( highways["SpeedLimit"], col=heat.colors(56) )
 roads %>% 
   filter( FullName == "Three Chopt Road") %>%
   ggplot() + 
-  geom_sf( aes(color=SpeedLimit), lwd=2) + 
+  geom_sf( aes(color=SpeedLimit), 
+           lwd=2) + 
   coord_sf()
 ```
 :::
@@ -546,7 +573,7 @@ plot( theFan["Name"])
 ```
 
 
-## Add Auxillary Data
+## Add Auxillary Data {.smaller}
 
 
 ```{r}
@@ -562,10 +589,11 @@ theFan %>%
           everything() )  -> theFan
 ```
 
-##
+## &nbsp;
 
 ```{r fig.width=12}
-ggplot( theFan ) + geom_sf( aes( fill=Category)) + scale_fill_brewer( type="qual", palette = "Set3")
+ggplot( theFan ) + geom_sf( aes( fill=Category)) + 
+  scale_fill_brewer( type="qual", palette = "Set3")
 ```
 
 
@@ -580,39 +608,27 @@ plot( st_geometry( fanRoads ))
 
 ## Selecting a Single Zone
 
-:::: {.columns}
 
-::: {.column width="50%"}
 Add an attribute to the POLYGON's indicating if the district is that big one in the middle of the plot.
 
-```{r eval=FALSE}
+```{r}
 theFan %>%
   mutate( Target = ifelse( OBJECTID == 368, 
                            TRUE, 
                            FALSE) ) -> theFan
-theFan %>%
-  ggplot() + 
-  geom_sf( aes(fill=Target) ) + 
-  geom_sf_text( aes(label=OBJECTID), size=3 ) +
-  coord_sf() 
 ```
-:::
 
-::: {.column width="50%"}
-```{r echo=FALSE}
-theFan %>%
-  mutate( Target = ifelse( OBJECTID == 368, 
-                           TRUE, 
-                           FALSE) ) -> theFan
+
+## Plot it
+```{r}
 theFan %>%
   ggplot() + 
   geom_sf( aes(fill=Target) ) + 
   geom_sf_text( aes(label=OBJECTID), size=3 ) +
   coord_sf() + theme(legend.position = "none")
 ```
-:::
 
-::::
+
 
 ## Isolate the District
 
@@ -623,7 +639,7 @@ plot( st_geometry( target ) )
 
 
 
-## 
+## &nbsp;
 
 ```{r}
 fanRoads %>%
@@ -634,7 +650,7 @@ fanRoads %>%
 ```
 
 
-##
+## &nbsp;
 
 ```{r}
 fanRoads %>%
