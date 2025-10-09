@@ -287,7 +287,7 @@ va_counties %>%
 ```{r fig.width=10}
 ggplot( va_counties, aes( Longitude, Latitude) ) + 
   geom_polygon( aes( group=group ), fill="grey80",
-                color = "black", size = 0.25) + 
+                color = "black", linewidth = 0.25) + 
   coord_quickmap()
 ```
 
@@ -372,7 +372,10 @@ unzip("Roads.zip")
 ## File Components
 
 
-![](https://live.staticflickr.com/65535/50540213032_8bd1f297a6_c_d.jpg)
+![](https://www.flickr.com/photo_download.gne?id=54843115636&secret=34392673a2&size=c&source=photoPageEngagement)
+
+
+## The Projection File
 
 ![](https://live.staticflickr.com/65535/50540256782_1e697d935c_c_d.jpg)
 
@@ -507,12 +510,16 @@ roads %>%
   filter( StreetType %in% c("Highway", 
                             "Highway Interchange",
                             "Ramp")) -> highways
+summary( highways )
 ```
 
-## And Plotting
+
+## Plot It 
+
+Let's color this based upon SpeedLimit
 
 ```{r echo=FALSE}
-plot( highways["SpeedLimit"], col=heat.colors(56) )
+plot( highways["SpeedLimit"], lwd=4 )
 ```
 
 
@@ -530,7 +537,7 @@ roads %>%
   ggplot() + 
   geom_sf( aes(color=SpeedLimit), 
            lwd=2) + 
-  coord_sf()
+  coord_sf() + theme(axis.text.x = element_text(angle = 45) )
 ```
 :::
 
@@ -538,7 +545,7 @@ roads %>%
 ```{r echo=FALSE}
 roads %>% 
   filter( FullName == "Three Chopt Road") %>%
-  ggplot() + geom_sf(aes(color=SpeedLimit), lwd=2) + coord_sf()
+  ggplot() + geom_sf(aes(color=SpeedLimit), lwd=2) + coord_sf() + theme(axis.text.x = element_text(angle = 45) )
 ```
 
 :::
@@ -593,7 +600,7 @@ theFan %>%
 
 ```{r fig.width=12}
 ggplot( theFan ) + geom_sf( aes( fill=Category)) + 
-  scale_fill_brewer( type="qual", palette = "Set3")
+  scale_fill_brewer( type="qual", palette = "Set3") + theme_void()
 ```
 
 
@@ -609,7 +616,7 @@ plot( st_geometry( fanRoads ))
 ## Selecting a Single Zone
 
 
-Add an attribute to the POLYGON's indicating if the district is that big one in the middle of the plot.
+Add an attribute to the POLYGON's indicating if the district is that big one in the middle of the plot.  Let's plot it to see what the ID is.
 
 ```{r}
 theFan %>%
@@ -625,7 +632,7 @@ theFan %>%
   ggplot() + 
   geom_sf( aes(fill=Target) ) + 
   geom_sf_text( aes(label=OBJECTID), size=3 ) +
-  coord_sf() + theme(legend.position = "none")
+  coord_sf() + theme_void()
 ```
 
 
@@ -658,31 +665,8 @@ fanRoads %>%
                          sparse = FALSE ) == TRUE ) %>%
   ggplot() +
   geom_sf( data=target  ) +
-  geom_sf( color="darkgreen" ) 
+  geom_sf( color="darkgreen" ) + theme_void()
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

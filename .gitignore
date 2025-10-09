@@ -47,4 +47,5 @@ README_files/*
 *.zip
 __MACOSX
 Zoning_Districts*
+.DS_Store
 Centerlines-shp/

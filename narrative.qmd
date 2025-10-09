@@ -1,5 +1,5 @@
 ---
-title: "Working with Shapefiles"
+title: "Lines, Polygons, and Shapefiles"
 format: html
 execute: 
   echo: true
