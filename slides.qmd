@@ -1,5 +1,5 @@
 ---
-title: "Lines & Polygons"
+title: "Vector Data"
 subtitle: "&nbsp;"
 author: Rodney Dyer, PhD
 format: revealjs
