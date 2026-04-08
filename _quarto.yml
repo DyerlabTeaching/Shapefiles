@@ -1,29 +1,8 @@
 project:
   title: "Shapefiles"
   output-dir: docs
+  pre-render: _extensions/dyerlab/update-extension.sh
 
 format:
-  html:
-    toc: true
-    toc-title: Contents
-    toc-location: right
-    html-math-method: katex
-    self-contained: true
-    citations-hover: true
-    footnotes-hover: true
-    link-external-icon: true
-  revealjs:
-    self-contained: true
-    code-fold: false
-    code-overflow: wrap
-    footer: "[Dyerlab](https://dyerlab.org)"
-    background-transition: fade
-    theme: default
-    editor: source
-    title-slide-attributes: 
-      data-background-image: "media/contour.png"
-      data-background-position: "right"
-      data-background-size: initial
-  
-
-
+  dyerlab-html: default
+  dyerlab-revealjs: default
