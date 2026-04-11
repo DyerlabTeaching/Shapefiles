@@ -49,3 +49,5 @@ __MACOSX
 Zoning_Districts*
 .DS_Store
 Centerlines-shp/
+
+**/*.quarto_ipynb
