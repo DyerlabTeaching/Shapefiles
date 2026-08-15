@@ -29,7 +29,7 @@ roads_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlin
 district_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"
 ```
 
-We can use `R` to download and unzip the file *in the current data directory* (n.b., you can do it using a browser as well).  To use `R` you need to first download them (I've set `eval=FALSE` to the chuck so it is not redownloaded each time.  Run it by hand using `CTRL/CMD + Return`).
+We can use `R` to download and unzip the file *in the current data directory* (n.b., you can do it using a browser as well).  To use `R` you need to first download them (I've set `eval=FALSE` to the chunk so it is not redownloaded each time.  Run it by hand using `CTRL/CMD + Return`).
 
 ```{r}
 download.file( district_url , destfile = "./Districts.zip")
@@ -45,7 +45,7 @@ unzip("Roads.zip")
 
 These routines will expand the archives in the current directory.
 
-Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, the are one of each with the *Zoning_Districts.* set of files expanded in the current directory and the *Roads* expanded to a subfolder named *Centerlines-shp*.
+Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, there are one of each with the *Zoning_Districts.* set of files expanded in the current directory and the *Roads* expanded to a subfolder named *Centerlines-shp*.
 
 ```{r}
 system( "ls" )
@@ -73,7 +73,7 @@ roads %>%
 roads
 ```
 
-You can see that the `geometry` object is a `LINESTRING` (in `sf` terms).  We can see the coordinates for one of these (say *Dwyer St*), by conveting the `geometry` object to a Well Know Text (WKT) version representing the sequence of points.
+You can see that the `geometry` object is a `LINESTRING` (in `sf` terms).  We can see the coordinates for one of these (say *Dwyer St*), by converting the `geometry` object to a Well Known Text (WKT) version representing the sequence of points.
 
 For any particular street, say *Three Chopt Road* in Richmond, we can filter out the rows of this for each `LINESTRING` object. 
 
@@ -108,7 +108,7 @@ ggplot( three_chopt ) +
 
 ## Polygons
 
-Polygons are simply lines whose first and last point are the same (e.g., they close upon themselves).  We can create these *de novo*
+Polygons are simply lines whose first and last point are the same (e.g., they close upon themselves).  We can create these *de novo*.
 
 ### Polygons from Data Frames
 
@@ -123,7 +123,7 @@ map_data( "county", "virginia") %>%
           County = subregion) -> va_counties
 head( va_counties )
 ```
-To get an idea of what theses data represent visually, let's first plot it as a `geom_point()` object.  This wil show you where all the coordinates are located (just not the connecting lines).
+To get an idea of what these data represent visually, let's first plot it as a `geom_point()` object.  This will show you where all the coordinates are located (just not the connecting lines).
 
 
 ```{r}
@@ -143,12 +143,12 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
   coord_quickmap()
 ```
 
-What is hidden here is the complexity of the the points themselves.  Each county is identified by a `group` in the `data.frame` 
+What is hidden here is the complexity of the points themselves.  Each county is identified by a `group` in the `data.frame`.
 
 
 
 
-If we look at a particular county, it may be a bit more informative on how these things are consturcted.  Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).  
+If we look at a particular county, it may be a bit more informative on how these things are constructed.  Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).  
 
 ```{r}
 va_counties %>%
@@ -205,7 +205,7 @@ The whole thing looks like this (I'll use the area of each polygon as the fill c
 ```{r}
 plot( districts["Shape__Are"], axes=TRUE )
 ```
-Notice it is in `CRS = NAD83/Virginia South (ftUS)`, which if we look at [epsg.io](http://epsg.io/32147) and search for it relates to EPGS=32147.  Let's do some pre-processing[^1]:  
+Notice it is in `CRS = NAD83/Virginia South (ftUS)`, which if we look at [epsg.io](http://epsg.io/32147) and search for it relates to EPSG=32147.  Let's do some pre-processing[^1]:  
 - Put it in Lat/Lon for simplicity  
 - Drop some of the unnecessary columns of data in the shapefile. 
 - Crop to the VCU/Fan area (I went to google earth and found the bounding box and then just added it here so I had to make it lat/lon then crop then change it back).
@@ -302,7 +302,7 @@ names( theFan )
 names( fanRoads )
 ```
 
-We can use *spatial joins* to select features either directly.  Here I'll use the target polygon in `theFan` 
+<mark>We can use *spatial joins* to select features either directly.</mark>  Here I'll use the target polygon in `theFan`.
 
 ```{r}
 target <- theFan[ theFan$OBJECTID == 368, ]
@@ -321,7 +321,7 @@ summary( fanRoads$OnTarget )
 
 
 
-We can get the names of these road using normal `dplyr` routines,
+We can get the names of these roads using normal `dplyr` routines,
 
 ```{r}
 fanRoads %>%
@@ -351,4 +351,4 @@ Go check out the `sf` cheatsheet for more geospatial joins and options.
 
 [^1]: **Dyer's First Law**: Reproject then forget about it!
 
-[^2]: You should be careful when you use joins on `sf` objects.  If you `sf` object is on the right side (see discussion of joins [here](https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object. 
+[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object. 

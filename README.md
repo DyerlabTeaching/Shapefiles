@@ -11,20 +11,20 @@ That being said, one of the more popular corporate GIS software packages uses an
 
 At the end of this topic, you should be able to:  
 
-- Creation of `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
+- Create `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
 
-- Loading map polygons from `get_data()`  
+- Load map polygons from `get_data()`  
 
-- Importing data from ESRI shapefile zips.  
+- Import data from ESRI shapefile zips.  
 
 - Learn some basic techniques in Spatial Joins.
 
 ## Content
 
  - The [slides](https://dyerlabteaching.github.io/Shapefiles/slides.html) that cover the basic creation of lines and polygons *de novo* and the importation of shapefiles.
- - A longber [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) opnm the subject.
+ - A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) on the subject.
  - The [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity we will walk through.
- - A [Cheetsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
+ - A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
 
 ## Contact Information
 

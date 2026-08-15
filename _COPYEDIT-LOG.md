@@ -1,0 +1,29 @@
+# Copy-Edit Log — Shapefiles
+
+Tracks copy-editing passes over this module's `.qmd` documents. Clear-cut
+typos/grammar/spelling errors are corrected directly in the source. Items
+that need an author decision are left in place but wrapped in
+`<mark>...</mark>` so they show up highlighted in the rendered HTML.
+
+## narrative.qmd — 2026-08-15
+
+### Fixed directly (typos, spelling, grammar)
+
+| Line | Issue | Fix |
+|---|---|---|
+| 32 | "the chuck" | "the chunk" |
+| 48 | "the are one of each" | "there are one of each" |
+| 76 | "conveting" / "Well Know Text" | "converting" / "Well Known Text" |
+| 111 | missing terminal period after "*de novo*" | added |
+| 126 | "theses data" / "This wil show" | "these data" / "This will show" |
+| 146 | "the the points" (duplicate word); missing terminal period | "the points"; added period |
+| 151 | "consturcted" | "constructed" |
+| 208 | "EPGS=32147" | "EPSG=32147" (correct acronym) |
+| 324 | "these road" | "these roads" |
+| footnote 2 | "If you `sf` object is on the right side" | "If your `sf` object is on the right side" |
+
+### Flagged for your review (highlighted with `<mark>` in the source)
+
+| Line | Text | Why it's flagged |
+|---|---|---|
+| ~305 | "We can use *spatial joins* to select features either directly." | "either" implies a second option that never shows up — looks like the sentence was cut short. Left for you to complete or remove "either." |

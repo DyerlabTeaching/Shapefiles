@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.36">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -68,7 +68,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="narrative_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="narrative_files/libs/quarto-html/anchor.min.js"></script>
 <link href="narrative_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="narrative_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="narrative_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="narrative_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="narrative_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="narrative_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -110,7 +110,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ dplyr     1.2.1     ✔ readr     2.2.0
 ✔ forcats   1.0.1     ✔ stringr   1.6.0
 ✔ lubridate 1.9.5     ✔ tibble    3.3.1
-✔ purrr     1.2.1     ✔ tidyr     1.3.2
+✔ purrr     1.2.2     ✔ tidyr     1.3.2
 ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ✖ dplyr::filter() masks stats::filter()
 ✖ dplyr::lag()    masks stats::lag()
@@ -127,7 +127,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlines-shp.zip"</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>We can use <code>R</code> to download and unzip the file <em>in the current data directory</em> (n.b., you can do it using a browser as well). To use <code>R</code> you need to first download them (I’ve set <code>eval=FALSE</code> to the chuck so it is not redownloaded each time. Run it by hand using <code>CTRL/CMD + Return</code>).</p>
+<p>We can use <code>R</code> to download and unzip the file <em>in the current data directory</em> (n.b., you can do it using a browser as well). To use <code>R</code> you need to first download them (I’ve set <code>eval=FALSE</code> to the chunk so it is not redownloaded each time. Run it by hand using <code>CTRL/CMD + Return</code>).</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( district_url , <span class="at">destfile =</span> <span class="st">"./Districts.zip"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( roads_url, <span class="at">destfile =</span>  <span class="st">"./Roads.zip"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -138,7 +138,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(<span class="st">"Roads.zip"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>These routines will expand the archives in the current directory.</p>
-<p>Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory. For this example, the are one of each with the <em>Zoning_Districts.</em> set of files expanded in the current directory and the <em>Roads</em> expanded to a subfolder named <em>Centerlines-shp</em>.</p>
+<p>Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory. For this example, there are one of each with the <em>Zoning_Districts.</em> set of files expanded in the current directory and the <em>Roads</em> expanded to a subfolder named <em>Centerlines-shp</em>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>( <span class="st">"ls"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -208,7 +208,7 @@ First 10 features:
 10 LINESTRING (11789514 373955...</code></pre>
 </div>
 </div>
-<p>You can see that the <code>geometry</code> object is a <code>LINESTRING</code> (in <code>sf</code> terms). We can see the coordinates for one of these (say <em>Dwyer St</em>), by conveting the <code>geometry</code> object to a Well Know Text (WKT) version representing the sequence of points.</p>
+<p>You can see that the <code>geometry</code> object is a <code>LINESTRING</code> (in <code>sf</code> terms). We can see the coordinates for one of these (say <em>Dwyer St</em>), by converting the <code>geometry</code> object to a Well Known Text (WKT) version representing the sequence of points.</p>
 <p>For any particular street, say <em>Three Chopt Road</em> in Richmond, we can filter out the rows of this for each <code>LINESTRING</code> object.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span> </span>
@@ -346,7 +346,7 @@ First 10 features:
 </section>
 <section id="polygons" class="level2">
 <h2 class="anchored" data-anchor-id="polygons">Polygons</h2>
-<p>Polygons are simply lines whose first and last point are the same (e.g., they close upon themselves). We can create these <em>de novo</em></p>
+<p>Polygons are simply lines whose first and last point are the same (e.g., they close upon themselves). We can create these <em>de novo</em>.</p>
 <section id="polygons-from-data-frames" class="level3">
 <h3 class="anchored" data-anchor-id="polygons-from-data-frames">Polygons from Data Frames</h3>
 <p>As a first approximation, we can grab polygon data from <code>ggplot</code> itself. Here I pull in the <code>data.frame</code> representing the counties of Virginia.</p>
@@ -377,7 +377,7 @@ Attaching package: 'maps'</code></pre>
 6 -75.31530 37.92981     1 accomack</code></pre>
 </div>
 </div>
-<p>To get an idea of what theses data represent visually, let’s first plot it as a <code>geom_point()</code> object. This wil show you where all the coordinates are located (just not the connecting lines).</p>
+<p>To get an idea of what these data represent visually, let’s first plot it as a <code>geom_point()</code> object. This will show you where all the coordinates are located (just not the connecting lines).</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( va_counties, <span class="fu">aes</span>( Longitude, Latitude) ) <span class="sc">+</span> </span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>( <span class="at">size=</span><span class="fl">0.25</span> ) <span class="sc">+</span> </span>
@@ -409,8 +409,8 @@ Attaching package: 'maps'</code></pre>
 </div>
 </div>
 </div>
-<p>What is hidden here is the complexity of the the points themselves. Each county is identified by a <code>group</code> in the <code>data.frame</code></p>
-<p>If we look at a particular county, it may be a bit more informative on how these things are consturcted. Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).</p>
+<p>What is hidden here is the complexity of the points themselves. Each county is identified by a <code>group</code> in the <code>data.frame</code>.</p>
+<p>If we look at a particular county, it may be a bit more informative on how these things are constructed. Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>va_counties <span class="sc">%&gt;%</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( County <span class="sc">%in%</span>  <span class="fu">c</span>(<span class="st">"hanover"</span>,<span class="st">"henrico"</span>) ) <span class="sc">%&gt;%</span></span>
@@ -468,34 +468,34 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>    OBJECTID          Name            Ordinance          OrdinanceP       
- Min.   :   1.0   Length:634         Length:634         Length:634        
- 1st Qu.: 162.2   Class :character   Class :character   Class :character  
- Median : 324.5   Mode  :character   Mode  :character   Mode  :character  
- Mean   : 389.6                                                           
- 3rd Qu.: 486.8                                                           
- Max.   :2677.0                                                           
-  Conditiona          AdoptionDa           Comment           CreatedBy        
- Length:634         Min.   :2000-01-01   Length:634         Length:634        
- Class :character   1st Qu.:2000-01-01   Class :character   Class :character  
- Mode  :character   Median :2000-01-01   Mode  :character   Mode  :character  
-                    Mean   :2004-01-20                                        
-                    3rd Qu.:2007-09-10                                        
-                    Max.   :2020-07-27                                        
-   CreatedDat            EditBy             EditDate         
- Min.   :2020-08-24   Length:634         Min.   :2020-08-24  
- 1st Qu.:2020-08-24   Class :character   1st Qu.:2020-08-24  
- Median :2020-08-24   Mode  :character   Median :2020-08-24  
- Mean   :2020-08-24                      Mean   :2020-08-24  
- 3rd Qu.:2020-08-24                      3rd Qu.:2020-08-24  
- Max.   :2020-08-24                      Max.   :2020-08-24  
-   GlobalID           Shape__Are          Shape__Len                geometry  
- Length:634         Min.   :     2823   Min.   :   213.4   MULTIPOLYGON :634  
- Class :character   1st Qu.:    71070   1st Qu.:  1232.3   epsg:2284    :  0  
- Mode  :character   Median :   258852   Median :  2552.3   +proj=lcc ...:  0  
-                    Mean   :  2749033   Mean   :  6265.9                      
-                    3rd Qu.:  1175317   3rd Qu.:  6166.8                      
-                    Max.   :171812574   Max.   :111874.1                      </code></pre>
+<pre><code>    OBJECTID             Name         Ordinance       OrdinanceP 
+ Min.   :   1.0   Length   :634   Length   :634   Length   :634  
+ 1st Qu.: 162.2   N.unique : 50   N.unique :143   N.unique : 50  
+ Median : 324.5   N.blank  :  0   N.blank  :  0   N.blank  :  0  
+ Mean   : 389.6   Min.nchar:  1   Min.nchar:  8   Min.nchar: 72  
+ 3rd Qu.: 486.8   Max.nchar:  7   Max.nchar: 17   Max.nchar:140  
+ Max.   :2677.0                   NAs      :373   NAs      :374  
+     Conditiona    AdoptionDa              Comment        CreatedBy  
+ Length   :634   Min.   :2000-01-01   Length   :634   Length   :634  
+ N.unique :  2   1st Qu.:2000-01-01   N.unique : 50   N.unique :  1  
+ N.blank  :  0   Median :2000-01-01   N.blank  :  0   N.blank  :  0  
+ Min.nchar:  2   Mean   :2004-01-20   Min.nchar:  4   Min.nchar: 18  
+ Max.nchar:  3   3rd Qu.:2007-09-10   Max.nchar: 44   Max.nchar: 18  
+                 Max.   :2020-07-27   NAs      :570                  
+   CreatedDat               EditBy       EditDate               GlobalID  
+ Min.   :2020-08-24   Length   :634   Min.   :2020-08-24   Length   :634  
+ 1st Qu.:2020-08-24   N.unique :  1   1st Qu.:2020-08-24   N.unique :634  
+ Median :2020-08-24   N.blank  :  0   Median :2020-08-24   N.blank  :  0  
+ Mean   :2020-08-24   Min.nchar: 18   Mean   :2020-08-24   Min.nchar: 36  
+ 3rd Qu.:2020-08-24   Max.nchar: 18   3rd Qu.:2020-08-24   Max.nchar: 36  
+ Max.   :2020-08-24                   Max.   :2020-08-24                  
+   Shape__Are          Shape__Len                geometry  
+ Min.   :     2823   Min.   :   213.4   MULTIPOLYGON :634  
+ 1st Qu.:    71070   1st Qu.:  1232.3   epsg:2284    :  0  
+ Median :   258852   Median :  2552.3   +proj=lcc ...:  0  
+ Mean   :  2749033   Mean   :  6265.9                      
+ 3rd Qu.:  1175317   3rd Qu.:  6166.8                      
+ Max.   :171812574   Max.   :111874.1                      </code></pre>
 </div>
 </div>
 <p>More importantly, we can look at the raw data and see the other meta data.</p>
@@ -532,7 +532,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 </div>
 </div>
 </div>
-<p>Notice it is in <code>CRS = NAD83/Virginia South (ftUS)</code>, which if we look at <a href="http://epsg.io/32147">epsg.io</a> and search for it relates to EPGS=32147. Let’s do some pre-processing<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:<br>
+<p>Notice it is in <code>CRS = NAD83/Virginia South (ftUS)</code>, which if we look at <a href="http://epsg.io/32147">epsg.io</a> and search for it relates to EPSG=32147. Let’s do some pre-processing<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:<br>
 - Put it in Lat/Lon for simplicity<br>
 - Drop some of the unnecessary columns of data in the shapefile. - Crop to the VCU/Fan area (I went to google earth and found the bounding box and then just added it here so I had to make it lat/lon then crop then change it back).</p>
 <div class="cell">
@@ -705,7 +705,7 @@ all geometries</code></pre>
 [6] "OneWay"     "geometry"  </code></pre>
 </div>
 </div>
-<p>We can use <em>spatial joins</em> to select features either directly. Here I’ll use the target polygon in <code>theFan</code></p>
+<p><mark>We can use <em>spatial joins</em> to select features either directly.</mark> Here I’ll use the target polygon in <code>theFan</code>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> theFan[ theFan<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">368</span>, ]</span>
 <span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>target</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -735,7 +735,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
  TRUE :553      </code></pre>
 </div>
 </div>
-<p>We can get the names of these road using normal <code>dplyr</code> routines,</p>
+<p>We can get the names of these roads using normal <code>dplyr</code> routines,</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>fanRoads <span class="sc">%&gt;%</span></span>
 <span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( <span class="fu">st_intersects</span>( fanRoads,</span>
@@ -801,7 +801,7 @@ dplyr 1.1.0.
 
 <ol>
 <li id="fn1"><p><strong>Dyer’s First Law</strong>: Reproject then forget about it!<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>You should be careful when you use joins on <code>sf</code> objects. If you <code>sf</code> object is on the right side (see discussion of joins <a href="https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5">here</a>) then the result will not be an <code>sf</code> object and you’ll have to coerce it back into one again. It always adopts the characteristics of the left object.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>You should be careful when you use joins on <code>sf</code> objects. If your <code>sf</code> object is on the right side (see discussion of joins <a href="https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5">here</a>) then the result will not be an <code>sf</code> object and you’ll have to coerce it back into one again. It always adopts the characteristics of the left object.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main>
 <!-- /main column -->
