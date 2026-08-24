@@ -1,0 +1,8 @@
+---
+title: "Teaching Log"
+format: html
+---
+
+> Daily updates on progress for the course in each section.
+
+

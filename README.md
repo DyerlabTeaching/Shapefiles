@@ -6,28 +6,33 @@ According to the artificial intelligence ChatGPT, a shapefile is defined in a re
 
 That being said, one of the more popular corporate GIS software packages uses and abuses this data format and it is important to know how to work in this mixed environment.
 
+## Module Learning Objectives
 
-## Student Learning Objectives
+### Construct and Import Vector Spatial Data
 
-At the end of this topic, you should be able to:  
+> Learners will create `sf::LINESTRING` and `sf::MULTIPOLYGON` objects directly from raw data, load map polygons using `get_data()`, and import data from ESRI shapefile zip archives.
 
-- Create `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
+- **Bloom's Levels:** Apply
+- **Reinforces:** Builds on the point-data handling from Spatial Points to cover the remaining vector geometry types (lines and polygons).
+- **Notes:** Explicitly addresses the ESRI shapefile format because of its continued prevalence in corporate/agency GIS workflows, despite its known limitations.
 
-- Load map polygons from `get_data()`  
+### Apply Spatial Joins
 
-- Import data from ESRI shapefile zips.  
+> Learners will use spatial join techniques to combine attribute data with spatial geometries.
 
-- Learn some basic techniques in Spatial Joins.
+- **Bloom's Levels:** Apply
+- **Reinforces:** Directly extends the tabular join concepts from Joins into a spatial context, closing the loop opened in that module.
+- **Notes:** Reinforces that "join" is a general relational concept, not one limited to non-spatial tables.
 
 ## Content
 
- - The [slides](https://dyerlabteaching.github.io/Shapefiles/slides.html) that cover the basic creation of lines and polygons *de novo* and the importation of shapefiles.
- - A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) on the subject.
- - The [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity we will walk through.
- - A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
+- The [slides](https://dyerlabteaching.github.io/Shapefiles/slides.html) that cover the basic creation of lines and polygons *de novo* and the importation of shapefiles.
+- A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) on the subject.
+- The [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity we will walk through.
+- A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
 
 ## Contact Information
 
-If you need to contact me, I am available at:  
- - Email: rjdyer@vcu.edu
- - Twitter: [@dyerlab](https://twitter.com/dyerlab/)
+If you need to contact me, I am available at:
+- Email: [rjdyer@vcu.edu](mailto://rjdyer@vcu.edu)
+- Web: [rodneydyer.com](https://rodneydyer.com)
