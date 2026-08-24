@@ -1,8 +1,6 @@
 ---
 title: "Lines, Polygons, and Shapefiles"
 format: html
-execute: 
-  echo: true
 ---
 
 ```{r}

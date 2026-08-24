@@ -1,5 +1,5 @@
 ---
-title: "Shapefile In Class Activity"
+title: "In Class Activity - Shapefiles"
 format: html
 ---
 
