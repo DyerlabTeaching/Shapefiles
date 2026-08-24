@@ -1,5 +1,7 @@
 # Shapefiles
 
+## Impetus
+
 According to the artificial intelligence ChatGPT, a shapefile is defined in a recent Tweet on [#gischat](https://twitter.com/search?q=%23gischat&src=typed_query) as:
 
 ![](https://github.com/DyerlabTeaching/Shapefiles/raw/main/media/shapefile_definition_chatGPT3.png)
@@ -30,6 +32,14 @@ That being said, one of the more popular corporate GIS software packages uses an
 - A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) on the subject.
 - The [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity we will walk through.
 - A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
+
+## Assessment
+
+- A [homework](https://dyerlabteaching.github.io/Shapefiles/homework.html) assignment on the topic.
+
+## Logistics
+
+- A [Teaching Log](https://dyerlabteaching.github.io/Shapefiles/log.html) record of delivery and notes.
 
 ## Contact Information
 
