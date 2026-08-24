@@ -468,34 +468,34 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>    OBJECTID             Name         Ordinance       OrdinanceP 
- Min.   :   1.0   Length   :634   Length   :634   Length   :634  
- 1st Qu.: 162.2   N.unique : 50   N.unique :143   N.unique : 50  
- Median : 324.5   N.blank  :  0   N.blank  :  0   N.blank  :  0  
- Mean   : 389.6   Min.nchar:  1   Min.nchar:  8   Min.nchar: 72  
- 3rd Qu.: 486.8   Max.nchar:  7   Max.nchar: 17   Max.nchar:140  
- Max.   :2677.0                   NAs      :373   NAs      :374  
-     Conditiona    AdoptionDa              Comment        CreatedBy  
- Length   :634   Min.   :2000-01-01   Length   :634   Length   :634  
- N.unique :  2   1st Qu.:2000-01-01   N.unique : 50   N.unique :  1  
- N.blank  :  0   Median :2000-01-01   N.blank  :  0   N.blank  :  0  
- Min.nchar:  2   Mean   :2004-01-20   Min.nchar:  4   Min.nchar: 18  
- Max.nchar:  3   3rd Qu.:2007-09-10   Max.nchar: 44   Max.nchar: 18  
-                 Max.   :2020-07-27   NAs      :570                  
-   CreatedDat               EditBy       EditDate               GlobalID  
- Min.   :2020-08-24   Length   :634   Min.   :2020-08-24   Length   :634  
- 1st Qu.:2020-08-24   N.unique :  1   1st Qu.:2020-08-24   N.unique :634  
- Median :2020-08-24   N.blank  :  0   Median :2020-08-24   N.blank  :  0  
- Mean   :2020-08-24   Min.nchar: 18   Mean   :2020-08-24   Min.nchar: 36  
- 3rd Qu.:2020-08-24   Max.nchar: 18   3rd Qu.:2020-08-24   Max.nchar: 36  
- Max.   :2020-08-24                   Max.   :2020-08-24                  
-   Shape__Are          Shape__Len                geometry  
- Min.   :     2823   Min.   :   213.4   MULTIPOLYGON :634  
- 1st Qu.:    71070   1st Qu.:  1232.3   epsg:2284    :  0  
- Median :   258852   Median :  2552.3   +proj=lcc ...:  0  
- Mean   :  2749033   Mean   :  6265.9                      
- 3rd Qu.:  1175317   3rd Qu.:  6166.8                      
- Max.   :171812574   Max.   :111874.1                      </code></pre>
+<pre><code>    OBJECTID          Name            Ordinance          OrdinanceP       
+ Min.   :   1.0   Length:634         Length:634         Length:634        
+ 1st Qu.: 162.2   Class :character   Class :character   Class :character  
+ Median : 324.5   Mode  :character   Mode  :character   Mode  :character  
+ Mean   : 389.6                                                           
+ 3rd Qu.: 486.8                                                           
+ Max.   :2677.0                                                           
+  Conditiona          AdoptionDa           Comment           CreatedBy        
+ Length:634         Min.   :2000-01-01   Length:634         Length:634        
+ Class :character   1st Qu.:2000-01-01   Class :character   Class :character  
+ Mode  :character   Median :2000-01-01   Mode  :character   Mode  :character  
+                    Mean   :2004-01-20                                        
+                    3rd Qu.:2007-09-10                                        
+                    Max.   :2020-07-27                                        
+   CreatedDat            EditBy             EditDate         
+ Min.   :2020-08-24   Length:634         Min.   :2020-08-24  
+ 1st Qu.:2020-08-24   Class :character   1st Qu.:2020-08-24  
+ Median :2020-08-24   Mode  :character   Median :2020-08-24  
+ Mean   :2020-08-24                      Mean   :2020-08-24  
+ 3rd Qu.:2020-08-24                      3rd Qu.:2020-08-24  
+ Max.   :2020-08-24                      Max.   :2020-08-24  
+   GlobalID           Shape__Are          Shape__Len                geometry  
+ Length:634         Min.   :     2823   Min.   :   213.4   MULTIPOLYGON :634  
+ Class :character   1st Qu.:    71070   1st Qu.:  1232.3   epsg:2284    :  0  
+ Mode  :character   Median :   258852   Median :  2552.3   +proj=lcc ...:  0  
+                    Mean   :  2749033   Mean   :  6265.9                      
+                    3rd Qu.:  1175317   3rd Qu.:  6166.8                      
+                    Max.   :171812574   Max.   :111874.1                      </code></pre>
 </div>
 </div>
 <p>More importantly, we can look at the raw data and see the other meta data.</p>

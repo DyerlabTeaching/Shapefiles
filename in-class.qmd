@@ -1,9 +1,6 @@
 ---
 title: "Shapefile In Class Activity"
-format: 
-  html:
-    code-tools: true
-    self-contained: true
+format: html
 ---
 
 This activity will focus on what we've learned thus far on how to work with `points`, `lines` and `ploygons` (and shapefiles) in `R`.
