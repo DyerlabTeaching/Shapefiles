@@ -1,6 +1,6 @@
 ---
 title: "Lines, Polygons, and Shapefiles"
-format: html
+format: dyerlab-narrative-html
 ---
 
 ```{r}

@@ -1,6 +1,6 @@
 ---
 title: "In Class Activity - Shapefiles"
-format: html
+format: dyerlab-html
 ---
 
 This activity will focus on what we've learned thus far on how to work with `points`, `lines` and `ploygons` (and shapefiles) in `R`.

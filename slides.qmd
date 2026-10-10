@@ -2,7 +2,7 @@
 title: "Vector Data"
 subtitle: "&nbsp;"
 author: Rodney Dyer, PhD
-format: revealjs
+format: dyerlab-revealjs
 execute: 
   echo: true
 ---
@@ -312,7 +312,7 @@ ggplot() +
 # Shapefiles 🤷  {background-color="black" background-image="media/contour.png" background-size="initial" background-position="right"}
 
 
-## &nbsp; {background-color="white" background-image="https://github.com/DyerlabTeaching/Shapefiles/raw/main/media/shapefile_definition_chatGPT3.png" background-size="contain" background-position="center"}
+## &nbsp; {background-color="white" background-image="https://dyerlabteaching.github.io/Shapefiles/media/shapefile_definition_chatGPT3.png" background-size="contain" background-position="center"}
 
 
 

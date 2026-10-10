@@ -4,7 +4,7 @@
 
 According to the artificial intelligence ChatGPT, a shapefile is defined in a recent Tweet on [#gischat](https://twitter.com/search?q=%23gischat&src=typed_query) as:
 
-![](https://github.com/DyerlabTeaching/Shapefiles/raw/main/media/shapefile_definition_chatGPT3.png)
+![](https://dyerlabteaching.github.io/Shapefiles/media/shapefile_definition_chatGPT3.png)
 
 That being said, one of the more popular corporate GIS software packages uses and abuses this data format and it is important to know how to work in this mixed environment.
 
