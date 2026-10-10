@@ -341,4 +341,4 @@ Go check out the `sf` cheatsheet for more geospatial joins and options.
 
 [^1]: **Dyer's First Law**: Reproject then forget about it!
 
-[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object. 
+[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlabteaching.github.io/Joins/narrative.html)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object. 
