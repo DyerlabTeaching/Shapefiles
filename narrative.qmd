@@ -20,33 +20,20 @@ The data for this are going to be represented by roads and development zones in 
 
 You can load in shapefile data directly into R but we have to do a little work.  First, we should understand that *a shapefile* is not an actual file, it is a collection of several files.  They are often zipped up into a single archive.  
 
-Here are two shape file archives that I have up on Github in the class repository.  
+There are two shapefile archives in the `data/` folder of this module: `Roads.zip` and `Districts.zip`.  If you are working along on your own computer, you can download them from [Roads.zip](https://dyerlabteaching.github.io/Shapefiles/data/Roads.zip) and [Districts.zip](https://dyerlabteaching.github.io/Shapefiles/data/Districts.zip) and put them in a `data` folder in your project.
+
+Before we can use them, we need to unzip them.  The `exdir` argument tells `unzip()` where to put the files.  Here I expand them into a temporary folder (`tempdir()`) so the raw files do not clutter up the project, but you could just as easily use a folder in your project.
 
 ```{r}
-roads_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlines-shp.zip"
-district_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"
+shp_dir <- tempdir()
+unzip( "data/Roads.zip", exdir = shp_dir )
+unzip( "data/Districts.zip", exdir = shp_dir )
 ```
 
-We can use `R` to download and unzip the file *in the current data directory* (n.b., you can do it using a browser as well).  To use `R` you need to first download them (I've set `eval=FALSE` to the chunk so it is not redownloaded each time.  Run it by hand using `CTRL/CMD + Return`).
+Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, there is one of each: the *Zoning_Districts.* set of files is expanded directly into the folder and the *Roads* are expanded into a subfolder named *Centerlines-shp*.
 
 ```{r}
-download.file( district_url , destfile = "./Districts.zip")
-download.file( roads_url, destfile =  "./Roads.zip")
-```
-
-We can unzip them now as:
-
-```{r}
-unzip("Districts.zip")
-unzip("Roads.zip")
-```
-
-These routines will expand the archives in the current directory.
-
-Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, there are one of each with the *Zoning_Districts.* set of files expanded in the current directory and the *Roads* expanded to a subfolder named *Centerlines-shp*.
-
-```{r}
-system( "ls" )
+list.files( shp_dir, recursive = TRUE, pattern = "Zoning|tran_" )
 ```
 
 
@@ -55,7 +42,7 @@ system( "ls" )
 We've covered [points](https://dyerlabteaching.github.io/Spatial-Points/slides.html#/title-slide) and now if we put them together in a sequence, we get lines.  They are taken in the order given, just like when we were plotting polygons using `geom_polygon()`.  Instead of loading these in manually, I'm going to load in the shapefile with the roads.  To load in shapefiles, we use the `st_read()` function and pass it the .shp file.
 
 ```{r}
-roads <- st_read( "Centerlines-shp/tran_Carriageway.shp" ) 
+roads <- st_read( file.path( shp_dir, "Centerlines-shp/tran_Carriageway.shp" ) )
 names( roads )
 ```
 
@@ -161,22 +148,16 @@ Notice that the points on the border are repeated in both `County == "hanover"` 
 
 ### Polygons from Shapefiles
 
-We can also load these in from shapefiles.  In the Richmond GIS data, we have Zoning District data.  We can unzip them in the current directory as before.
-
-```{r eval=FALSE}
-unzip( "./Districts.zip")
-```
-
-And in this case, it simply expands all the files in the current directory as a set of files named `Zoning_Districts.*`. 
+We can also load these in from shapefiles.  In the Richmond GIS data, we have Zoning District data, which we unzipped above.  In this case, the archive simply expanded into a set of files named `Zoning_Districts.*`.
 
 ```{r}
-system("ls -al Zoning*")
+list.files( shp_dir, pattern = "^Zoning_Districts" )
 ```
 
-To load it in, we read the shapefile (.shp) from the local directory.
+To load it in, we read the shapefile (.shp) from that folder.
 
 ```{r}
-districts <- st_read( "Zoning_Districts.shp" )
+districts <- st_read( file.path( shp_dir, "Zoning_Districts.shp" ) )
 class( districts )
 ```
 
@@ -242,12 +223,11 @@ ggplot( theFan ) +
 ```
 
 
-Let's go grab a key to those zoning types.  I've uploaded a csv file with a translation.  Here I `left_join()` with that new file that is read in dynamically[^2].
+Let's go grab a key to those zoning types.  There is a csv file with a translation in the `data/` folder.  Here I `left_join()` with that file as I read it in[^2].
 
 ```{r}
-zone_url <- "https://raw.githubusercontent.com/dyerlab/ENVS-Lectures/master/data/DistrictCodes.csv"
 theFan %>%
-  left_join( read_csv( zone_url ),
+  left_join( read_csv( "data/DistrictCodes.csv" ),
              by="Name") %>%
   mutate( Category = factor( Category) ) %>%
   select( OBJECTID, 

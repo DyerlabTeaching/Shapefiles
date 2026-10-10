@@ -58,8 +58,10 @@ vignettes/*.pdf
 
 **/*.quarto_ipynb
 
-# Downloaded practice data (RVA GIS shapefiles)
+# Practice data (RVA GIS shapefiles): the zips in data/ are tracked;
+# anything unzipped from them is not.
 *.zip
+!data/*.zip
 __MACOSX
 Zoning_Districts*
 Centerlines-shp/
