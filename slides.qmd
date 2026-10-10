@@ -323,7 +323,7 @@ The ESRI *Shapefile* is a non-standardized format for packaging vector based dat
 However, it is not actually a file but it is a collection of files, which may (or may not) expand directly in the folder or within a subfolder.
 
 
-![](https://live.staticflickr.com/65535/50540213032_8bd1f297a6_c_d.jpg)
+![](media/flickr_50540213032.jpg)
 
 
 ## Archived ZIP Files.
@@ -374,12 +374,12 @@ unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
 ## File Components
 
 
-![](https://www.flickr.com/photo_download.gne?id=54843115636&secret=34392673a2&size=c&source=photoPageEngagement)
+![](media/flickr_54843115636.jpg)
 
 
 ## The Projection File
 
-![](https://live.staticflickr.com/65535/50540256782_1e697d935c_c_d.jpg)
+![](media/flickr_50540256782.jpg)
 
 ## Loading A Shapefile
 
