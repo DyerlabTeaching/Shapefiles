@@ -20,14 +20,26 @@ The data for this are going to be represented by roads and development zones in 
 
 You can load in shapefile data directly into R but we have to do a little work.  First, we should understand that *a shapefile* is not an actual file, it is a collection of several files.  They are often zipped up into a single archive.  
 
-There are two shapefile archives in the `data/` folder of this module: `Roads.zip` and `Districts.zip`.  If you are working along on your own computer, you can download them from [Roads.zip](https://dyerlabteaching.github.io/Shapefiles/data/Roads.zip) and [Districts.zip](https://dyerlabteaching.github.io/Shapefiles/data/Districts.zip) and put them in a `data` folder in your project.
+Here are the two shapefile archives we will use, from the [course data repository](https://dyerlabteaching.github.io/CourseData/).
 
-Before we can use them, we need to unzip them.  The `exdir` argument tells `unzip()` where to put the files.  Here I expand them into a temporary folder (`tempdir()`) so the raw files do not clutter up the project, but you could just as easily use a folder in your project.
+```{r}
+roads_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"
+district_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"
+```
+
+We can use `R` to download them (n.b., you can do it using a browser as well).  The `destfile` argument says where to save each archive.  Here I put them in a temporary folder (`tempdir()`) so the raw files do not clutter up the project, but on your own computer you will usually save them into a `data` folder in your project (e.g., `destfile = "data/Roads.zip"`) so you only have to download them once.
 
 ```{r}
 shp_dir <- tempdir()
-unzip( "data/Roads.zip", exdir = shp_dir )
-unzip( "data/Districts.zip", exdir = shp_dir )
+download.file( roads_url, destfile = file.path( shp_dir, "Roads.zip" ) )
+download.file( district_url, destfile = file.path( shp_dir, "Districts.zip" ) )
+```
+
+Before we can use them, we need to unzip them.  The `exdir` argument tells `unzip()` where to put the expanded files.
+
+```{r}
+unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
+unzip( file.path( shp_dir, "Districts.zip" ), exdir = shp_dir )
 ```
 
 Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, there is one of each: the *Zoning_Districts.* set of files is expanded directly into the folder and the *Roads* are expanded into a subfolder named *Centerlines-shp*.
@@ -223,11 +235,11 @@ ggplot( theFan ) +
 ```
 
 
-Let's go grab a key to those zoning types.  There is a csv file with a translation in the `data/` folder.  Here I `left_join()` with that file as I read it in[^2].
+Let's go grab a key to those zoning types.  There is a csv file with a translation in the course data repository.  Here I `left_join()` with that file as I read it in[^2].
 
 ```{r}
 theFan %>%
-  left_join( read_csv( "data/DistrictCodes.csv" ),
+  left_join( read_csv( "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv" ),
              by="Name") %>%
   mutate( Category = factor( Category) ) %>%
   select( OBJECTID, 

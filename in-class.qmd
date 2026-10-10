@@ -15,13 +15,13 @@ library( tidyverse )
 The data for this consists of both zoning districts and road center lines for Richmond, Virginia.  These are available at:
 
 ```{r}
-#eval: false 
+#| eval: false
 
 # This code will allow you to download the raw shapefiles used in this example.
 #  Run it only ONCE—once you have the data downloaded, you do not need to grab it again.
 
-roads_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlines-shp.zip"
-district_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"
+roads_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"
+district_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"
 
 download.file( district_url , destfile = "./Districts.zip")
 download.file( roads_url, destfile =  "./Roads.zip")

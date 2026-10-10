@@ -103,6 +103,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div class="cell">
 <div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'sf' was built under R version 4.6.1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
 <pre><code>Linking to GEOS 3.13.0, GDAL 3.8.5, PROJ 9.5.1; sf_use_s2() is TRUE</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
@@ -122,35 +125,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="raw-data">Raw Data</h2>
 <p>The data for this are going to be represented by roads and development zones in Richmond, Virginia. These data are made available by the GIS Department of the City of Richmond. For this example, we will be loading these in as <em>shapefiles</em>.</p>
 <p>You can load in shapefile data directly into R but we have to do a little work. First, we should understand that <em>a shapefile</em> is not an actual file, it is a collection of several files. They are often zipped up into a single archive.</p>
-<p>Here are two shape file archives that I have up on Github in the class repository.</p>
+<p>There are two shapefile archives in the <code>data/</code> folder of this module: <code>Roads.zip</code> and <code>Districts.zip</code>. If you are working along on your own computer, you can download them from <a href="https://dyerlabteaching.github.io/Shapefiles/data/Roads.zip">Roads.zip</a> and <a href="https://dyerlabteaching.github.io/Shapefiles/data/Districts.zip">Districts.zip</a> and put them in a <code>data</code> folder in your project.</p>
+<p>Before we can use them, we need to unzip them. The <code>exdir</code> argument tells <code>unzip()</code> where to put the files. Here I expand them into a temporary folder (<code>tempdir()</code>) so the raw files do not clutter up the project, but you could just as easily use a folder in your project.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlines-shp.zip"</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>shp_dir <span class="ot">&lt;-</span> <span class="fu">tempdir</span>()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="st">"data/Roads.zip"</span>, <span class="at">exdir =</span> shp_dir )</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="st">"data/Districts.zip"</span>, <span class="at">exdir =</span> shp_dir )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>We can use <code>R</code> to download and unzip the file <em>in the current data directory</em> (n.b., you can do it using a browser as well). To use <code>R</code> you need to first download them (I’ve set <code>eval=FALSE</code> to the chunk so it is not redownloaded each time. Run it by hand using <code>CTRL/CMD + Return</code>).</p>
+<p>Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory. For this example, there is one of each: the <em>Zoning_Districts.</em> set of files is expanded directly into the folder and the <em>Roads</em> are expanded into a subfolder named <em>Centerlines-shp</em>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( district_url , <span class="at">destfile =</span> <span class="st">"./Districts.zip"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( roads_url, <span class="at">destfile =</span>  <span class="st">"./Roads.zip"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list.files</span>( shp_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">pattern =</span> <span class="st">"Zoning|tran_"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "Centerlines-shp/tran_Carriageway.cpg"
+ [2] "Centerlines-shp/tran_Carriageway.dbf"
+ [3] "Centerlines-shp/tran_Carriageway.prj"
+ [4] "Centerlines-shp/tran_Carriageway.shp"
+ [5] "Centerlines-shp/tran_Carriageway.shx"
+ [6] "Zoning_Districts.cpg"                
+ [7] "Zoning_Districts.dbf"                
+ [8] "Zoning_Districts.prj"                
+ [9] "Zoning_Districts.shp"                
+[10] "Zoning_Districts.shx"                </code></pre>
 </div>
-<p>We can unzip them now as:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(<span class="st">"Districts.zip"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(<span class="st">"Roads.zip"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>These routines will expand the archives in the current directory.</p>
-<p>Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory. For this example, there are one of each with the <em>Zoning_Districts.</em> set of files expanded in the current directory and the <em>Roads</em> expanded to a subfolder named <em>Centerlines-shp</em>.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>( <span class="st">"ls"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="lines" class="level2">
 <h2 class="anchored" data-anchor-id="lines">Lines</h2>
 <p>We’ve covered <a href="https://dyerlabteaching.github.io/Spatial-Points/slides.html#/title-slide">points</a> and now if we put them together in a sequence, we get lines. They are taken in the order given, just like when we were plotting polygons using <code>geom_polygon()</code>. Instead of loading these in manually, I’m going to load in the shapefile with the roads. To load in shapefiles, we use the <code>st_read()</code> function and pass it the .shp file.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>roads <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>roads <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/Users/rodney/Courses/Modules/Shapefiles/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpqnUd6U/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -325,7 +331,7 @@ First 10 features:
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -338,7 +344,7 @@ First 10 features:
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -385,7 +391,7 @@ Attaching package: 'maps'</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -404,7 +410,7 @@ Attaching package: 'maps'</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -421,7 +427,7 @@ Attaching package: 'maps'</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -430,20 +436,20 @@ Attaching package: 'maps'</code></pre>
 </section>
 <section id="polygons-from-shapefiles" class="level3">
 <h3 class="anchored" data-anchor-id="polygons-from-shapefiles">Polygons from Shapefiles</h3>
-<p>We can also load these in from shapefiles. In the Richmond GIS data, we have Zoning District data. We can unzip them in the current directory as before.</p>
+<p>We can also load these in from shapefiles. In the Richmond GIS data, we have Zoning District data, which we unzipped above. In this case, the archive simply expanded into a set of files named <code>Zoning_Districts.*</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="st">"./Districts.zip"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list.files</span>( shp_dir, <span class="at">pattern =</span> <span class="st">"^Zoning_Districts"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Zoning_Districts.cpg" "Zoning_Districts.dbf" "Zoning_Districts.prj"
+[4] "Zoning_Districts.shp" "Zoning_Districts.shx"</code></pre>
 </div>
-<p>And in this case, it simply expands all the files in the current directory as a set of files named <code>Zoning_Districts.*</code>.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">"ls -al Zoning*"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>To load it in, we read the shapefile (.shp) from the local directory.</p>
+<p>To load it in, we read the shapefile (.shp) from that folder.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="st">"Zoning_Districts.shp"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/Users/rodney/Courses/Modules/Shapefiles/Zoning_Districts.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpqnUd6U/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -527,7 +533,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -581,7 +587,7 @@ all geometries</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -594,22 +600,21 @@ all geometries</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Let’s go grab a key to those zoning types. I’ve uploaded a csv file with a translation. Here I <code>left_join()</code> with that new file that is read in dynamically<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>Let’s go grab a key to those zoning types. There is a csv file with a translation in the <code>data/</code> folder. Here I <code>left_join()</code> with that file as I read it in<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>zone_url <span class="ot">&lt;-</span> <span class="st">"https://raw.githubusercontent.com/dyerlab/ENVS-Lectures/master/data/DistrictCodes.csv"</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>( <span class="fu">read_csv</span>( zone_url ),</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">by=</span><span class="st">"Name"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Category =</span> <span class="fu">factor</span>( Category) ) <span class="sc">%&gt;%</span></span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( OBJECTID, </span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>          Name, </span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>          Category, </span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>          <span class="fu">everything</span>() )  <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>( <span class="fu">read_csv</span>( <span class="st">"data/DistrictCodes.csv"</span> ),</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">by=</span><span class="st">"Name"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Category =</span> <span class="fu">factor</span>( Category) ) <span class="sc">%&gt;%</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( OBJECTID, </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>          Name, </span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>          Category, </span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>          <span class="fu">everything</span>() )  <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 27 Columns: 2
 ── Column specification ────────────────────────────────────────────────────────
@@ -628,7 +633,7 @@ chr (2): Name, Category
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -667,7 +672,7 @@ all geometries</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -686,7 +691,7 @@ all geometries</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -788,7 +793,7 @@ dplyr 1.1.0.
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>

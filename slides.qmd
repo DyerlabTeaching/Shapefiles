@@ -328,13 +328,13 @@ However, it is not actually a file but it is a collection of files, which may (o
 
 ## Archived ZIP Files.
 
-I've uploaded some shapefiles to the [Github Repository](https://github.com/dyerlab/ENVS-Lectures) for this class.  These are from the Richmond City GIS Department and represent the centerlines of roads in the city as well as the zoning districts.
+I've put some shapefiles in the [course data repository](https://dyerlabteaching.github.io/CourseData/).  These are from the Richmond City GIS Department and represent the centerlines of roads in the city as well as the zoning districts.
 
 Here are the URL's for both of these files.
 
 ```{r}
-roads_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Centerlines-shp.zip"
-district_url <- "https://github.com/dyerlab/ENVS-Lectures/raw/master/data/Zoning_Districts-shp.zip"
+roads_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"
+district_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"
 ```
 
 
@@ -348,9 +348,10 @@ You can use your browser and copy and paste those addresses in to download the f
 
 You can have `R` download the file and save it locally.
 
-```{r eval=FALSE}
-download.file( district_url , destfile = "./Districts.zip")
-download.file( roads_url, destfile =  "./Roads.zip")
+```{r}
+shp_dir <- tempdir()  # on your computer, use your project's data folder
+download.file( district_url, destfile = file.path( shp_dir, "Districts.zip" ) )
+download.file( roads_url, destfile = file.path( shp_dir, "Roads.zip" ) )
 ```
 
 :::
@@ -363,9 +364,9 @@ You can open your computer finder and have the OS unzip the archives.
 
 You can have `R` do it.
 
-```{r eval=FALSE}
-unzip("Districts.zip")
-unzip("Roads.zip")
+```{r}
+unzip( file.path( shp_dir, "Districts.zip" ), exdir = shp_dir )
+unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
 ```
 
 
@@ -385,7 +386,7 @@ unzip("Roads.zip")
 You can load it in using `sf::st_read()` and passing it the `.shp` file path to it.
 
 ```{r}
-st_read("Zoning_Districts.shp") -> districts 
+st_read( file.path( shp_dir, "Zoning_Districts.shp" ) ) -> districts 
 ```
 
 ## Shapefiles Convert to `sf` Objects {.smaller .scrollable}
@@ -456,7 +457,7 @@ There are a wide variety of operations available:
 ## Secondary Vector Data Set
 
 ```{r}
-road.shapefile <- st_read("Centerlines-shp/tran_Carriageway.shp")
+road.shapefile <- st_read( file.path( shp_dir, "Centerlines-shp/tran_Carriageway.shp" ) )
 ```
 
 :::{.fragment}
@@ -585,7 +586,7 @@ plot( theFan["Name"])
 
 
 ```{r}
-zone_url <- "https://raw.githubusercontent.com/dyerlab/ENVS-Lectures/master/data/DistrictCodes.csv"
+zone_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"
 
 theFan %>%
   left_join( read_csv( zone_url ),
