@@ -165,7 +165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>roads <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpsmGw9L/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpoAazWo/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -458,7 +458,7 @@ Attaching package: 'maps'</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpsmGw9L/Zoning_Districts.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpoAazWo/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -815,7 +815,7 @@ dplyr 1.1.0.
 
 <ol>
 <li id="fn1"><p><strong>Dyer’s First Law</strong>: Reproject then forget about it!<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>You should be careful when you use joins on <code>sf</code> objects. If your <code>sf</code> object is on the right side (see discussion of joins <a href="https://dyerlab.github.io/ENVS-Lectures/manipulation/relational_data/slides.html#5">here</a>) then the result will not be an <code>sf</code> object and you’ll have to coerce it back into one again. It always adopts the characteristics of the left object.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>You should be careful when you use joins on <code>sf</code> objects. If your <code>sf</code> object is on the right side (see discussion of joins <a href="https://dyerlabteaching.github.io/Joins/narrative.html">here</a>) then the result will not be an <code>sf</code> object and you’ll have to coerce it back into one again. It always adopts the characteristics of the left object.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main>
 <!-- /main column -->
