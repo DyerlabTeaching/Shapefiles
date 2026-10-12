@@ -1,4 +1,10 @@
-# Shapefiles
+# Lines, Polygons, and Shapefiles
+
+<!-- BEGIN module:header — generated from module.yml; edit that, not this -->
+
+![A wetland and lake with a dock near Loch Lomond in Scotland.](https://dyerlabteaching.github.io/Shapefiles/media/module_image.jpg)
+
+<!-- END module:header -->
 
 ## Impetus
 
@@ -28,10 +34,14 @@ That being said, one of the more popular corporate GIS software packages uses an
 
 ## Content
 
-- The [slides](https://dyerlabteaching.github.io/Shapefiles/slides.html) that cover the basic creation of lines and polygons *de novo* and the importation of shapefiles.
-- A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) on the subject.
-- The [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity we will walk through.
+<!-- BEGIN module:resources — generated from module.yml; edit that, not this -->
+
+- The [slides](https://dyerlabteaching.github.io/Shapefiles/slides.html) for this topic.
+- A longer [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) that goes into more depth.
+- An [in-class](https://dyerlabteaching.github.io/Shapefiles/in-class.html) activity.
 - A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library.
+
+<!-- END module:resources -->
 
 ## Assessment
 

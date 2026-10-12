@@ -1,0 +1,10 @@
+title: "Lines, Polygons, and Shapefiles"
+repo: Shapefiles
+image:
+  file: media/module_image.jpg
+  alt: "A wetland and lake with a dock near Loch Lomond in Scotland."
+epigraph: >-
+  Connecting points creates more complicated data types—vector data—that
+  represent lines and polygons.
+resources:
+  - "A [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf) for the `sf` library."

@@ -3,6 +3,14 @@ title: "Lines, Polygons, and Shapefiles"
 format: dyerlab-narrative-html
 ---
 
+<!-- BEGIN module:header — generated from module.yml; edit that, not this -->
+
+![](media/module_image.jpg){fig-alt="A wetland and lake with a dock near Loch Lomond in Scotland."}
+
+> Connecting points creates more complicated data types—vector data—that represent lines and polygons.
+
+<!-- END module:header -->
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -130,7 +138,6 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
 ```
 
 
-
 ```{r}
 ggplot( va_counties, aes( Longitude, Latitude) ) + 
   geom_polygon( aes( group=group ),
@@ -141,8 +148,6 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
 ```
 
 What is hidden here is the complexity of the points themselves.  Each county is identified by a `group` in the `data.frame`.
-
-
 
 
 If we look at a particular county, it may be a bit more informative on how these things are constructed.  Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).  
@@ -210,9 +215,6 @@ districts %>%
           geometry) -> districts
 head( districts )
 ```
-
-
-
 
 
 And we can plot it normally using `plot()` for `sf` objects.  Each row is a `MULTIPOLYGON` object.
@@ -310,7 +312,6 @@ summary( fanRoads$OnTarget )
 ```
 
 
-
 We can get the names of these roads using normal `dplyr` routines,
 
 ```{r}
@@ -336,7 +337,6 @@ fanRoads %>%
 ```
 
 Go check out the `sf` cheatsheet for more geospatial joins and options.
-
 
 
 [^1]: **Dyer's First Law**: Reproject then forget about it!

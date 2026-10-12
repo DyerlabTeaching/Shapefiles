@@ -1,5 +1,5 @@
 project:
-  title: "Shapefiles"
+  title: "Lines, Polygons, and Shapefiles"
   output-dir: docs
   pre-render: _extensions/dyerlab/update-extension.sh
   resources:
