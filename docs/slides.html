@@ -233,17 +233,17 @@ Rodney Dyer, PhD
 <span id="cb1-4"><a href=""></a>                  <span class="at">Latitude =</span> <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">37</span>, <span class="dv">1</span>) )</span>
 <span id="cb1-5"><a href=""></a>df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       id       Data Longitude Latitude
-1  Rodney 118.405673 -80.86528 36.83089
-2  Rodney  56.828961 -78.86712 37.81589
-3  Rodney 115.036002 -80.36663 38.78573
-4  Rodney  27.744234 -77.90440 37.06750
-5  Rodney  14.702213 -77.67951 38.07845
-6   Sarah -51.609090 -77.88265 37.23497
-7   Sarah  74.895323 -77.18058 39.28087
-8   Sarah   8.663767 -78.98119 36.12537
-9   Sarah  69.641566 -79.31910 36.08282
-10  Sarah 104.486982 -77.50583 37.70666</code></pre>
+<pre><code>       id      Data Longitude Latitude
+1  Rodney  34.76819 -77.71787 35.02370
+2  Rodney  38.24206 -77.92786 37.31192
+3  Rodney  67.64590 -79.38152 36.82536
+4  Rodney 114.35588 -79.15871 37.54399
+5  Rodney  47.82405 -77.90468 36.65865
+6   Sarah -34.79557 -80.58818 35.51979
+7   Sarah -21.35334 -77.42562 37.96118
+8   Sarah  63.50623 -78.25328 36.61868
+9   Sarah  56.15486 -79.91531 37.14066
+10  Sarah  29.78707 -79.47303 36.70159</code></pre>
 </div>
 </div>
 </section>
@@ -258,19 +258,19 @@ Rodney Dyer, PhD
 <pre><code>Simple feature collection with 10 features and 2 fields
 Geometry type: POINT
 Dimension:     XY
-Bounding box:  xmin: -80.86528 ymin: 36.08282 xmax: -77.18058 ymax: 39.28087
+Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
 Geodetic CRS:  WGS 84
-       id       Data                   geometry
-1  Rodney 118.405673 POINT (-80.86528 36.83089)
-2  Rodney  56.828961 POINT (-78.86712 37.81589)
-3  Rodney 115.036002 POINT (-80.36663 38.78573)
-4  Rodney  27.744234   POINT (-77.9044 37.0675)
-5  Rodney  14.702213 POINT (-77.67951 38.07845)
-6   Sarah -51.609090 POINT (-77.88265 37.23497)
-7   Sarah  74.895323 POINT (-77.18058 39.28087)
-8   Sarah   8.663767 POINT (-78.98119 36.12537)
-9   Sarah  69.641566  POINT (-79.3191 36.08282)
-10  Sarah 104.486982 POINT (-77.50583 37.70666)</code></pre>
+       id      Data                   geometry
+1  Rodney  34.76819  POINT (-77.71787 35.0237)
+2  Rodney  38.24206 POINT (-77.92786 37.31192)
+3  Rodney  67.64590 POINT (-79.38152 36.82536)
+4  Rodney 114.35588 POINT (-79.15871 37.54399)
+5  Rodney  47.82405 POINT (-77.90468 36.65865)
+6   Sarah -34.79557 POINT (-80.58818 35.51979)
+7   Sarah -21.35334 POINT (-77.42562 37.96118)
+8   Sarah  63.50623 POINT (-78.25328 36.61868)
+9   Sarah  56.15486 POINT (-79.91531 37.14066)
+10  Sarah  29.78707 POINT (-79.47303 36.70159)</code></pre>
 </div>
 </div>
 </section>
@@ -321,13 +321,13 @@ Geodetic CRS:  WGS 84
 <pre><code>Simple feature collection with 2 features and 2 fields
 Geometry type: LINESTRING
 Dimension:     XY
-Bounding box:  xmin: -80.86528 ymin: 36.08282 xmax: -77.18058 ymax: 39.28087
+Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
 Geodetic CRS:  WGS 84
 # A tibble: 2 × 3
   id      Data                                                          geometry
   &lt;chr&gt;  &lt;dbl&gt;                                                  &lt;LINESTRING [°]&gt;
-1 Rodney  66.5 (-80.36663 38.78573, -80.86528 36.83089, -77.9044 37.0675, -78.8…
-2 Sarah   41.2 (-79.3191 36.08282, -78.98119 36.12537, -77.50583 37.70666, -77.…</code></pre>
+1 Rodney  60.6 (-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77.…
+2 Sarah   18.7 (-79.91531 37.14066, -79.47303 36.70159, -80.58818 35.51979, -78…</code></pre>
 </div>
 </div>
 </section>
@@ -362,7 +362,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href=""></a><span class="fu">st_length</span>( lines )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Units: [m]
-[1] 713252.5 547790.6</code></pre>
+[1] 617095.0 637017.9</code></pre>
 </div>
 </div>
 <div class="fragment">
@@ -371,7 +371,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href=""></a><span class="fu">st_bbox</span>( lines )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     xmin      ymin      xmax      ymax 
--80.86528  36.08282 -77.18058  39.28087 </code></pre>
+-80.58818  35.02370 -77.42562  37.96118 </code></pre>
 </div>
 </div>
 <div class="fragment">
@@ -384,7 +384,7 @@ Geodetic CRS:  WGS 84
 <span id="cb14-5"><a href=""></a>  <span class="fu">st_area</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb14-6"><a href=""></a>  <span class="fu">set_units</span>( km<span class="sc">^</span><span class="dv">2</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>76608.04 [km^2]</code></pre>
+<pre><code>61761.42 [km^2]</code></pre>
 </div>
 </div>
 </div>
@@ -396,7 +396,7 @@ Geodetic CRS:  WGS 84
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a>lines<span class="sc">$</span>geometry[<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">st_as_text</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "LINESTRING (-80.36663 38.78573, -80.86528 36.83089, -77.9044 37.0675, -78.86712 37.81589, -77.67951 38.07845)"</code></pre>
+<pre><code>[1] "LINESTRING (-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77.92786 37.31192, -79.15871 37.54399)"</code></pre>
 </div>
 </div>
 </section></section>
@@ -412,19 +412,19 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href=""></a>df.p <span class="ot">&lt;-</span> df[ <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,<span class="dv">1</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>,<span class="dv">6</span>),]</span>
 <span id="cb18-2"><a href=""></a>df.p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>        id       Data Longitude Latitude
-1   Rodney 118.405673 -80.86528 36.83089
-2   Rodney  56.828961 -78.86712 37.81589
-3   Rodney 115.036002 -80.36663 38.78573
-4   Rodney  27.744234 -77.90440 37.06750
-5   Rodney  14.702213 -77.67951 38.07845
-1.1 Rodney 118.405673 -80.86528 36.83089
-6    Sarah -51.609090 -77.88265 37.23497
-7    Sarah  74.895323 -77.18058 39.28087
-8    Sarah   8.663767 -78.98119 36.12537
-9    Sarah  69.641566 -79.31910 36.08282
-10   Sarah 104.486982 -77.50583 37.70666
-6.1  Sarah -51.609090 -77.88265 37.23497</code></pre>
+<pre><code>        id      Data Longitude Latitude
+1   Rodney  34.76819 -77.71787 35.02370
+2   Rodney  38.24206 -77.92786 37.31192
+3   Rodney  67.64590 -79.38152 36.82536
+4   Rodney 114.35588 -79.15871 37.54399
+5   Rodney  47.82405 -77.90468 36.65865
+1.1 Rodney  34.76819 -77.71787 35.02370
+6    Sarah -34.79557 -80.58818 35.51979
+7    Sarah -21.35334 -77.42562 37.96118
+8    Sarah  63.50623 -78.25328 36.61868
+9    Sarah  56.15486 -79.91531 37.14066
+10   Sarah  29.78707 -79.47303 36.70159
+6.1  Sarah -34.79557 -80.58818 35.51979</code></pre>
 </div>
 </div>
 </section>
@@ -446,13 +446,13 @@ Geodetic CRS:  WGS 84
 <pre><code>Simple feature collection with 2 features and 2 fields
 Geometry type: POLYGON
 Dimension:     XY
-Bounding box:  xmin: -80.86528 ymin: 36.08282 xmax: -77.18058 ymax: 39.28087
+Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
 Geodetic CRS:  WGS 84
 # A tibble: 2 × 3
   id      Data                                                          geometry
   &lt;chr&gt;  &lt;dbl&gt;                                                     &lt;POLYGON [°]&gt;
-1 Rodney  66.5 ((-80.36663 38.78573, -80.86528 36.83089, -77.9044 37.0675, -78.…
-2 Sarah   41.2 ((-79.3191 36.08282, -78.98119 36.12537, -77.50583 37.70666, -77…</code></pre>
+1 Rodney  60.6 ((-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77…
+2 Sarah   18.7 ((-79.91531 37.14066, -79.47303 36.70159, -80.58818 35.51979, -7…</code></pre>
 </div>
 </div>
 </section>
@@ -590,7 +590,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href=""></a><span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) ) <span class="ot">-&gt;</span> districts </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpOyfACU/Zoning_Districts.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpVK9Ier/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -708,7 +708,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href=""></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpOyfACU/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpVK9Ier/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -759,14 +759,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb52-6"><a href=""></a>          <span class="at">StreetType =</span> <span class="fu">factor</span>( StreetType) ) <span class="ot">-&gt;</span> roads</span>
 <span id="cb52-7"><a href=""></a><span class="fu">summary</span>( roads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>      FullName     OneWay                    StreetType      SpeedLimit   
- Length   :29081   1  :    2   Alley              : 3139   Min.   : 0.00  
- N.unique : 4081   FT : 3225   Artery             : 5201   1st Qu.:25.00  
- N.blank  :    0   TF : 3148   Highway            :  384   Median :25.00  
- Min.nchar:    3   NAs:22706   Highway Interchange:   93   Mean   :25.17  
- Max.nchar:   46               Private            : 1540   3rd Qu.:25.00  
- NAs      : 4526               Ramp               :  378   Max.   :55.00  
-                               Secondary          :18346   NAs    :7959   
+<pre><code>   FullName          OneWay                    StreetType      SpeedLimit   
+ Length:29081       1   :    2   Alley              : 3139   Min.   : 0.00  
+ Class :character   FT  : 3225   Artery             : 5201   1st Qu.:25.00  
+ Mode  :character   TF  : 3148   Highway            :  384   Median :25.00  
+                    NA's:22706   Highway Interchange:   93   Mean   :25.17  
+                                 Private            : 1540   3rd Qu.:25.00  
+                                 Ramp               :  378   Max.   :55.00  
+                                 Secondary          :18346   NA's   :7959   
      Length                   geometry    
  Min.   :    2.943   LINESTRING   :29081  
  1st Qu.:  164.849   epsg:2284    :    0  
@@ -787,14 +787,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb54-4"><a href=""></a>                            <span class="st">"Ramp"</span>)) <span class="ot">-&gt;</span> highways</span>
 <span id="cb54-5"><a href=""></a><span class="fu">summary</span>( highways )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>      FullName   OneWay                  StreetType    SpeedLimit   
- Length   :855   1  :  0   Alley              :  0   Min.   : 0.00  
- N.unique :170   FT :416   Artery             :  0   1st Qu.:25.00  
- N.blank  :  0   TF :408   Highway            :384   Median :25.00  
- Min.nchar:  3   NAs: 31   Highway Interchange: 93   Mean   :36.19  
- Max.nchar: 46             Private            :  0   3rd Qu.:55.00  
- NAs      : 18             Ramp               :378   Max.   :55.00  
-                           Secondary          :  0   NAs    :131    
+<pre><code>   FullName          OneWay                  StreetType    SpeedLimit   
+ Length:855         1   :  0   Alley              :  0   Min.   : 0.00  
+ Class :character   FT  :416   Artery             :  0   1st Qu.:25.00  
+ Mode  :character   TF  :408   Highway            :384   Median :25.00  
+                    NA's: 31   Highway Interchange: 93   Mean   :36.19  
+                               Private            :  0   3rd Qu.:55.00  
+                               Ramp               :378   Max.   :55.00  
+                               Secondary          :  0   NA's   :131    
      Length                  geometry  
  Min.   :   14.46   LINESTRING   :855  
  1st Qu.:  276.48   epsg:2284    :  0  

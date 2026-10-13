@@ -6,6 +6,13 @@ format: dyerlab-html
 > Daily updates on progress for the course in each section.
 
 
+## Entries
+
+- 2026.10.13: 
+
+
+
+
 ## Copy-Edit Log — Shapefiles
 
 Tracks copy-editing passes over this module's `.qmd` documents. Clear-cut
