@@ -8,7 +8,7 @@ format: dyerlab-html
 
 ## Entries
 
-- 2026.10.13: 
+- 2026.10.13: Started and got to [here](https://dyerlabteaching.github.io/Shapefiles/slides.html#/textual-versions-of-geometry).  We need to stop and work on incremental progress.
 
 
 
