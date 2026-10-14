@@ -4,6 +4,7 @@ project:
   pre-render: _extensions/dyerlab/update-extension.sh
   resources:
     - media/
+    - get_landcover.R
     - data/
 
 format:
