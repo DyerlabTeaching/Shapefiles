@@ -17,9 +17,13 @@ This section covers the following topics:
 
 - Loading map polygons from `map_data()`  
 
+- Building buffers, unions, and hulls around sampling locations.  
+
 - Importing data from ESRI shapefile.  
 
-- Implementing Spatial Joins.
+- Implementing Spatial Joins.  
+
+- Measuring land cover inside polygons.
 
 
 
@@ -306,6 +310,125 @@ ggplot() +
   coord_sf()
 ```
 
+
+
+
+
+# Buffers & Neighborhoods {background-color="black" background-image="media/contour.png" background-size="initial" background-position="right"}
+
+
+## Dogwood Trees
+
+Maternal dogwood trees sampled from the city of Richmond south to Pocahontas State Park.  We start with the 15 `Preliminary` trees (5 per `Habitat`).
+
+```{r}
+dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
+read_csv( dogwood_url ) %>%
+  filter( Preliminary ) %>%
+  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) %>%
+  st_transform( crs = 32617 ) -> trees
+```
+
+:::{.fragment}
+<font color="red">Buffers & areas use the CRS units: reproject to meters (UTM 17N) first!</font>
+:::
+
+
+## &nbsp; {.scrollable}
+
+```{r}
+trees
+```
+
+
+## Plot the Trees
+
+```{r}
+ggplot( trees ) + geom_sf( aes( color = Habitat ), size = 4 ) + coord_sf()
+```
+
+
+## Buffers
+
+Everything within some distance of a feature.  Buffering a `POINT` makes a `POLYGON`.
+
+```{r}
+trees %>%
+  st_buffer( dist = 250 ) -> nbhd
+st_area( nbhd ) %>% head( n = 3 )
+```
+
+:::{.fragment}
+Compare to $\pi r^2$
+
+```{r}
+pi * 250^2
+```
+:::
+
+
+## Unions
+
+`summarize()` on an `sf` object unions the geometries in each group.
+
+```{r}
+nbhd %>%
+  group_by( Habitat ) %>%
+  summarize() -> habitat_nbhd
+habitat_nbhd %>%
+  st_area() %>% set_units( km^2 )
+```
+
+:::{.fragment}
+Five buffers would be `r round( 5 * pi * 250^2 / 1e6, 2 )` km²; overlaps are only counted once.
+:::
+
+
+## Convex Hulls
+
+The smallest convex polygon around a set of points (a rubber band).
+
+```{r}
+trees %>%
+  group_by( Habitat ) %>%
+  summarize() %>%
+  st_convex_hull() -> hulls
+st_area( hulls ) %>% set_units( km^2 )
+```
+
+
+## A Transect Corridor
+
+```{r}
+y <- st_coordinates( trees )[ , "Y" ]
+trees[ y == max( y ) | y == min( y ), ] %>%
+  summarize() %>%
+  st_cast( "LINESTRING" ) -> transect
+st_length( transect ) %>% set_units( km )
+transect %>% st_buffer( dist = 250 ) -> corridor
+```
+
+
+## &nbsp;
+
+```{r}
+#| echo: false
+#| fig-width: 10
+ggplot() +
+  geom_sf( aes( fill = Habitat ), alpha = 0.2, data = hulls ) +
+  geom_sf( fill = "grey60", color = NA, data = corridor ) +
+  geom_sf( aes( fill = Habitat ), data = nbhd ) +
+  geom_sf( data = trees, size = 0.5 ) +
+  coord_sf() +
+  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+```
+
+
+## In-Class Activity: Part 1 {background-color="limegreen"}
+
+&nbsp;
+
+<center>Open the in-class activity and work through **Part 1: Building Polygons**.</center>
 
 
 
@@ -670,6 +793,87 @@ targetRoads %>%
   geom_sf( data=target  ) +
   geom_sf( color="darkgreen" ) + theme_void()
 ```
+
+
+
+## Joining Attributes: `st_join()`
+
+Like `left_join()`, but rows match where geometries *intersect*.
+
+```{r}
+fanRoads %>%
+  st_join( theFan %>% select( Category ) ) %>%
+  st_drop_geometry() %>%
+  count( Category, sort = TRUE ) %>% head()
+```
+
+
+## Cutting Features: `st_intersection()`
+
+Keep only the *parts* that overlap; e.g., km of road inside the target.
+
+```{r}
+fanRoads %>%
+  st_intersection( st_geometry( target ) ) %>%
+  st_length() %>% sum() %>% set_units( km )
+```
+
+
+
+
+# Land Cover {background-color="black" background-image="media/contour.png" background-size="initial" background-position="right"}
+
+
+## National Land Cover Database
+
+<a href="https://www.mrlc.gov/data" target="_blank">NLCD</a>: every 30 m × 30 m cell of the US classified into land cover (water, developed, forest, wetlands, agriculture, ...).
+
+:::{.fragment}
+This is a *raster*, which we cover later.  For now, it is a black box:
+
+```{r}
+source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+```
+
+`get_landcover( polygons )` $\to$ proportion of each polygon in 7 categories.
+:::
+
+
+## Land Cover in Each Neighborhood {.scrollable}
+
+```{r}
+lc <- get_landcover( nbhd )
+lc
+```
+
+
+## Summarize by Habitat
+
+```{r}
+lc %>%
+  group_by( Habitat, Category ) %>%
+  summarize( Proportion = mean( Proportion ), .groups = "drop" ) -> habitat_lc
+habitat_lc %>%
+  pivot_wider( names_from = Habitat, values_from = Proportion ) %>%
+  knitr::kable( digits = 3 )
+```
+
+
+## &nbsp;
+
+```{r}
+#| fig-width: 10
+ggplot( habitat_lc, aes( Category, Proportion, fill = Habitat ) ) +
+  geom_col( position = "dodge" ) + coord_flip() +
+  labs( x = NULL, y = "Average proportion of a 250 m neighborhood" )
+```
+
+
+## In-Class Activity: Part 2 {background-color="limegreen"}
+
+&nbsp;
+
+<center>Back to the in-class activity for **Part 2: Land Cover**.</center>
 
 
 

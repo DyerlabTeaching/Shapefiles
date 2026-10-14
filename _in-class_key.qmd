@@ -3,7 +3,7 @@ title: "In Class Activity - Lines, Polygons, and Shapefiles (Key)"
 format: dyerlab-html
 ---
 
-This activity focuses on building and using `LINESTRING` and `POLYGON` objects in `R`.  We will use them to ask an ecological question about dogwood trees sampled along a transect in Richmond, Virginia.
+This activity focuses on building and using `LINESTRING` and `POLYGON` objects in `R`, around a set of dogwood trees sampled from the city of Richmond, Virginia south to Pocahontas State Park.  We will do it in two parts: first building polygons around the trees, and then (after we cover shapefiles and land cover) measuring what is inside them.
 
 ```{r}
 #| message: false
@@ -12,18 +12,18 @@ library( tidyverse )
 library( units )
 ```
 
-You will also need the `terra` library installed (`install.packages("terra")`), though you will not load it yourself.  It is used inside the land cover function at the end.
-
 ## The Data
 
-These are maternal dogwood trees from an ongoing study.  Each tree was sampled in one of two habitat types: `Cultivar` trees growing in suburban and urban Richmond and Chesterfield, and `Native` trees in Pocahontas State Park.  The columns are:
+Each row is a maternal dogwood tree.  The columns are:
 
-- `Type`: The habitat the tree was sampled in.
+- `Mother`: The type of maternal tree, `Cultivar` or `Native`.
+- `Habitat`: Where it was sampled; `Urban` and `Suburban` cultivars (north and south of 37.45°N), and `Native` trees in the park.
 - `Tree`: An ID for the tree.
 - `Longitude` and `Latitude`: Its location (decimal degrees, WGS84).
 - `N`: The number of offspring (seeds) collected from that tree.
+- `Preliminary`: Whether it is one of a subset of 5 trees from each habitat.
 
-The data are in the course data repository at:
+For this activity we will use only the `Preliminary` trees.  The data are in the course data repository at:
 
 ```{r}
 url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
@@ -33,22 +33,23 @@ url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.c
 
 The main question you are going to work on here is:
 
-> Do the `Cultivar` and `Native` dogwoods live in different landscapes?  And does a single transect through the study area represent the landscape the trees actually live in?
+> Do the dogwoods in the three habitats live in different landscapes?  And does a single transect through the study area represent the landscape the trees actually live in?
 
-To answer this, you will build lines and polygons around the trees and then measure the land cover inside them.  Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) handy.
+Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) handy.
 
-## Points
+## Part 1: Building Polygons
 
-1. Read in the data with `read_csv()` and convert it into an `sf` object of `POINT`s with `st_as_sf()`.  Make sure you give it the correct `crs`.
+1. Read in the data, keep only the `Preliminary` trees, and convert them into an `sf` object of `POINT`s.  Make sure you give it the correct `crs`.
 
 ```{r}
 read_csv( url ) %>%
+  filter( Preliminary ) %>%
   st_as_sf( coords = c("Longitude", "Latitude"),
             crs = 4326 ) -> trees
 trees
 ```
 
-2. We are going to measure lengths and areas in meters, so reproject the trees into UTM Zone 17N (`EPSG:32617`), whose units are meters.  Show that the CRS has changed.
+2. We are going to measure distances and areas, so reproject the trees into UTM Zone 17N (`EPSG:32617`), whose units are meters.  Show that the CRS has changed.
 
 ```{r}
 trees %>%
@@ -56,17 +57,57 @@ trees %>%
 st_crs( trees )$Name
 ```
 
-3. Make a plot of the trees, colored by `Type`.
+3. Make a plot of the trees, colored by `Habitat`.
 
 ```{r}
 ggplot( trees ) +
-  geom_sf( aes( color = Type ) ) +
+  geom_sf( aes( color = Habitat ), size = 3 ) +
   coord_sf()
 ```
 
-## Lines
+4. In class we used 250 m neighborhoods.  Here, define each tree's *neighborhood* as everything within **500 m** of it.  Use `st_buffer()` to make a polygon around each tree.  What is the area of one neighborhood, and how does it compare to $\pi r^2$?
 
-4. A transect is a straight line through the study area.  Find the northernmost and southernmost trees (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates) and make a `LINESTRING` that connects them.  What are their `Tree` IDs?
+```{r}
+trees %>%
+  st_buffer( dist = 500 ) -> nbhd
+st_area( nbhd[1, ] )
+pi * 500^2
+```
+
+> **Answer:** Each neighborhood is about 785,039 m², slightly less than πr² (785,398 m²) because the circle is approximated by a polygon with many short straight sides, which fits just inside the true circle.
+
+5. Union the neighborhoods into a single polygon for each `Habitat`.  What is the area of each in km²?  Why is it less than five times the area of a single neighborhood (and why is it *much* less for one of the habitats)?
+
+```{r}
+nbhd %>%
+  group_by( Habitat ) %>%
+  summarize() -> habitat_nbhd
+habitat_nbhd %>%
+  mutate( Area = set_units( st_area( habitat_nbhd ), km^2 ) )
+5 * pi * 500^2 / 1e6
+```
+
+> **Answer:** `Native` is about 2.92 km², `Suburban` 3.45 km², and `Urban` 3.92 km², against 3.93 km² for five separate circles.  Where neighborhoods overlap, the overlap is only counted once.  The `Native` trees are very close together in the park, so their neighborhoods overlap the most.
+
+6. Make the convex hull around the trees in each `Habitat`, and find their areas in km².  Make a plot of the hulls with the trees on top.
+
+```{r}
+trees %>%
+  group_by( Habitat ) %>%
+  summarize() %>%
+  st_convex_hull() -> hulls
+hulls %>%
+  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+
+ggplot() +
+  geom_sf( aes( fill = Habitat ), alpha = 0.25, data = hulls ) +
+  geom_sf( aes( color = Habitat ), data = trees ) +
+  coord_sf()
+```
+
+> **Answer:** About 0.89 km² for `Native`, 4.57 km² for `Suburban`, and 3.06 km² for `Urban`.
+
+7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates).  What are the `Tree` IDs at each end, and how long is it in km?
 
 ```{r}
 y <- st_coordinates( trees )[ , "Y" ]
@@ -76,30 +117,13 @@ ends$Tree
 ends %>%
   summarize() %>%
   st_cast( "LINESTRING" ) -> transect
-transect
-```
-
-> **Answer:** The ends are `124UWP` (northernmost, a `Cultivar`) and `1026PWP` (southernmost, a `Native`).  `summarize()` combines the two points into a `MULTIPOINT`, which is then cast to a `LINESTRING`.
-
-5. How long is the transect?  Report it in kilometers.
-
-```{r}
 st_length( transect ) %>%
   set_units( km )
 ```
 
-> **Answer:** About 22 km.
+> **Answer:** The ends are `105UWP` (north, `Urban`) and `361PWP` (south, `Native`), and the transect is about 15.4 km long.
 
-6. Make a plot of the trees with the transect drawn on top.
-
-```{r}
-ggplot() +
-  geom_sf( aes( color = Type ), data = trees ) +
-  geom_sf( data = transect ) +
-  coord_sf()
-```
-
-7. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
+8. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
 
 ```{r}
 trees[ order( y ), ] %>%
@@ -109,100 +133,38 @@ st_length( zigzag ) %>%
   set_units( km )
 ```
 
-> **Answer:** About 88 km, four times the transect.  A `LINESTRING` connects points in the order given, so sorting only by latitude makes the line zig-zag east and west between trees that are at similar latitudes, especially in the tight cluster in the park.  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
+> **Answer:** About 26.7 km.  A `LINESTRING` connects points in the order given, so sorting only by latitude makes the line zig-zag east and west between trees at similar latitudes (the suburban trees are spread out east to west).  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
 
-## Polygons
-
-8. Let's define each tree's *neighborhood* as everything within 250 m of it.  Use `st_buffer()` to make a polygon around each tree.  What kind of geometry does this make?  What is the area of one neighborhood, and how does it compare to $\pi r^2$?  Why might it be slightly different?
-
-```{r}
-trees %>%
-  st_buffer( dist = 250 ) -> nbhd
-st_geometry_type( nbhd ) %>% unique()
-st_area( nbhd[1, ] )
-pi * 250^2
-```
-
-> **Answer:** Each buffer is a `POLYGON`.  Its area (about 196,260 m²) is slightly smaller than πr² (196,350 m²) because the circle is approximated by a polygon with a finite number of straight sides, which always fits just inside the true circle.
-
-9. Buffer the transect by the same 250 m to make a *corridor* polygon.  What is its area in square kilometers?
+9. Buffer the transect by 500 m to make a *corridor*.  Make a single plot showing the hulls, the corridor, the neighborhoods, and the trees.
 
 ```{r}
 transect %>%
-  st_buffer( dist = 250 ) -> corridor
-st_area( corridor ) %>%
-  set_units( km^2 )
-```
-
-> **Answer:** About 11.2 km².
-
-10. For each `Type`, make a single polygon that encloses all of its trees (the *convex hull*).  What are their areas in square kilometers?  Make a plot of both hulls with the trees on top.
-
-```{r}
-trees %>%
-  group_by( Type ) %>%
-  summarize() %>%
-  st_convex_hull() -> hulls
-hulls %>%
-  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+  st_buffer( dist = 500 ) -> corridor
 
 ggplot() +
-  geom_sf( aes( fill = Type ), alpha = 0.25, data = hulls ) +
-  geom_sf( aes( color = Type ), data = trees ) +
-  coord_sf()
+  geom_sf( aes( fill = Habitat ), alpha = 0.2, data = hulls ) +
+  geom_sf( fill = "grey60", color = NA, data = corridor ) +
+  geom_sf( aes( fill = Habitat ), data = nbhd ) +
+  geom_sf( data = trees, size = 0.5 ) +
+  coord_sf() +
+  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
 ```
 
-> **Answer:** About 51.3 km² for `Cultivar` and 16.7 km² for `Native`.
+## Part 2: Land Cover
 
-## Land Cover
+The land cover data are from the 2021 [National Land Cover Database](https://www.mrlc.gov/data) (NLCD).  These data are a *raster*, which we will learn to work with in a later topic.  For now, the `get_landcover()` function does that part for you.  It takes an `sf` object of polygons and returns a `data.frame` with one row for each polygon and each of seven land cover categories (`Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`).  The rows carry along all the columns from your polygons (but not the geometry) plus the `Proportion` of that polygon's area covered by that category.
 
-The land cover data are from the 2021 [National Land Cover Database](https://www.mrlc.gov/data) (NLCD), which classifies every 30 m × 30 m cell of the US into a land cover type.  These data are a *raster*, which we will learn to work with in a later topic.  For now, the function below does that part for you.  Run the chunk to load it, but you do not need to understand what is inside it yet.
-
-To use it, pass `get_landcover()` an `sf` object of polygons.  It returns a `data.frame` with one row for each polygon and each of seven land cover categories (`Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`).  The rows carry along all the columns from your polygons (but not the geometry) plus the `Proportion` of that polygon's area covered by that category.
+The function is in its own file.  This chunk downloads it into your project folder (once) and loads it.  It needs the `terra` library to be installed (`install.packages("terra")`), though you do not need to load it.
 
 ```{r}
-#| code-fold: true
-#| code-summary: "The land cover function (run this, but don't worry about it yet)"
-get_landcover <- function( polygons ) {
-  nlcd_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_NLCD_2021.tif"
-  nlcd_file <- file.path( tempdir(), "Richmond_NLCD_2021.tif" )
-  if( !file.exists( nlcd_file ) || file.size( nlcd_file ) == 0 ) {
-    download.file( nlcd_url, nlcd_file, mode = "wb", quiet = TRUE )
-  }
-  nlcd <- terra::rast( nlcd_file )
-
-  # Proportion of each polygon's area in each NLCD class
-  areas <- terra::extract( nlcd,
-                           terra::vect( sf::st_transform( polygons, terra::crs( nlcd ) ) ),
-                           exact = TRUE )
-  names( areas ) <- c("ID", "Code", "Fraction")
-
-  # Group the 15 NLCD classes into 7 categories
-  key <- tibble::tibble( Code = c(11, 21, 22, 23, 24, 31, 41, 42, 43, 52, 71, 81, 82, 90, 95),
-                         Category = c("Water",
-                                      "Developed", "Developed", "Developed", "Developed",
-                                      "Barren",
-                                      "Forest", "Forest", "Forest",
-                                      "Shrub/Grass", "Shrub/Grass",
-                                      "Agriculture", "Agriculture",
-                                      "Wetland", "Wetland") )
-
-  areas |>
-    dplyr::inner_join( key, by = "Code" ) |>
-    dplyr::mutate( Category = factor( Category, levels = unique( key$Category ) ) ) |>
-    dplyr::group_by( ID, Category, .drop = FALSE ) |>
-    dplyr::summarize( Cells = sum( Fraction ), .groups = "drop_last" ) |>
-    dplyr::mutate( Proportion = Cells / sum( Cells ) ) |>
-    dplyr::ungroup() |>
-    dplyr::mutate( Category = as.character( Category ) ) |>
-    dplyr::left_join( sf::st_drop_geometry( polygons ) |> dplyr::mutate( ID = dplyr::row_number() ),
-                      by = "ID" ) |>
-    dplyr::select( -ID, -Cells ) |>
-    dplyr::relocate( Category, Proportion, .after = dplyr::last_col() )
+if( !file.exists( "get_landcover.R" ) ) {
+  download.file( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R",
+                 destfile = "get_landcover.R" )
 }
+source( "get_landcover.R" )
 ```
 
-11. Get the land cover for each tree's 250 m neighborhood.  How many rows does the result have, and why that many?
+10. Get the land cover for each tree's 500 m neighborhood.  How many rows does the result have, and why that many?
 
 ```{r}
 lc <- get_landcover( nbhd )
@@ -210,81 +172,60 @@ nrow( lc )
 head( lc )
 ```
 
-> **Answer:** 406 rows: one for each of the 58 trees in each of the 7 land cover categories (58 × 7 = 406).
+> **Answer:** 105 rows: one for each of the 15 trees in each of the 7 land cover categories (15 × 7 = 105).
 
-12. Make a table of the average proportion of each land cover category for `Cultivar` and `Native` trees (one column for each `Type`).
-
-```{r}
-lc %>%
-  group_by( Type, Category ) %>%
-  summarize( Proportion = mean( Proportion ), .groups = "drop" ) %>%
-  pivot_wider( names_from = Type,
-               values_from = Proportion )
-```
-
-> **Answer:** `Cultivar` neighborhoods average about 84% developed and 10% forest; `Native` neighborhoods are about 5% developed and 84% forest.
-
-13. Make a plot comparing the proportion of `Developed` and `Forest` land cover in the neighborhoods of the two types of trees.
+11. Make a table of the average proportion of each land cover category in each `Habitat` (one column for each `Habitat`).
 
 ```{r}
 lc %>%
-  filter( Category %in% c("Developed", "Forest") ) %>%
-  ggplot( aes( Type, Proportion ) ) +
-  geom_boxplot() +
-  facet_wrap( ~ Category )
+  group_by( Habitat, Category ) %>%
+  summarize( Proportion = mean( Proportion ), .groups = "drop" ) -> habitat_lc
+
+habitat_lc %>%
+  pivot_wider( names_from = Habitat,
+               values_from = Proportion ) %>%
+  knitr::kable( digits = 3 )
 ```
 
-14. Now compare the transect to where the trees live.  Get the land cover for the transect corridor and for all of the tree neighborhoods combined into a single polygon (hint: `summarize()` an `sf` object with no grouping unions its geometries).  Make a table with the two side by side.  Does the transect represent the landscape the trees actually live in?
+> **Answer:** `Urban` neighborhoods are about 96% developed, `Suburban` about 71% developed with 16% wetland and 9% forest, and `Native` about 81% forest.
+
+12. Make a bar chart of the same information.
+
+```{r}
+ggplot( habitat_lc,
+        aes( Category, Proportion, fill = Habitat ) ) +
+  geom_col( position = "dodge" ) +
+  coord_flip() +
+  labs( x = NULL,
+        y = "Average proportion of a 500 m neighborhood" )
+```
+
+13. Get the land cover for the transect corridor and add it to your table as another column.  Does the transect represent the landscape the trees actually live in?
 
 ```{r}
 corridor %>%
-  mutate( Region = "Transect" ) %>%
-  get_landcover() -> lc_transect
-
-nbhd %>%
-  summarize() %>%
-  mutate( Region = "Trees" ) %>%
-  get_landcover() -> lc_trees
-
-bind_rows( lc_transect, lc_trees ) %>%
-  pivot_wider( names_from = Region,
-               values_from = Proportion )
+  mutate( Habitat = "Transect" ) %>%
+  get_landcover() %>%
+  bind_rows( habitat_lc ) %>%
+  pivot_wider( names_from = Habitat,
+               values_from = Proportion ) %>%
+  knitr::kable( digits = 3 )
 ```
 
-> **Answer:** Not very well.  The transect corridor is about 48% developed and 44% forest, but the area the trees actually occupy is about 57% developed and 36% forest.  A straight line samples whatever is between the endpoints (including a lot of suburban forest), not where the trees are.  It also hides the fact that the two types live in almost completely different landscapes.
+> **Answer:** No.  The corridor is about 58% developed and 29% forest, which does not look like any of the three habitats.  A straight line averages over everything between its endpoints rather than sampling where the trees are, and it hides how different the three habitats are.
 
-15. Is the answer sensitive to how we define a neighborhood?  Repeat question 12 using neighborhoods of 100 m and 1000 m.  What changes, and what does that tell you about choosing a neighborhood size?
+14. Compare your 500 m results to the 250 m neighborhoods we used in class.  Does the size of the neighborhood change the picture?  Which habitat changes the most, and why might that be?
 
 ```{r}
-for( r in c(100, 1000) ) {
-  trees %>%
-    st_buffer( dist = r ) %>%
-    get_landcover() %>%
-    group_by( Type, Category ) %>%
-    summarize( Proportion = mean( Proportion ), .groups = "drop" ) %>%
-    pivot_wider( names_from = Type,
-                 values_from = Proportion ) %>%
-    mutate( Radius = r ) %>%
-    print()
-}
+trees %>%
+  st_buffer( dist = 250 ) %>%
+  get_landcover() %>%
+  group_by( Habitat, Category ) %>%
+  summarize( P250 = mean( Proportion ), .groups = "drop" ) %>%
+  left_join( habitat_lc %>% rename( P500 = Proportion ),
+             by = c("Habitat", "Category") ) %>%
+  filter( Category %in% c("Developed", "Forest", "Wetland") ) %>%
+  knitr::kable( digits = 3 )
 ```
 
-> **Answer:** The direction of the difference does not change, but its size does.  At 100 m, `Cultivar` neighborhoods are about 93% developed and `Native` about 86% forest; at 1000 m these drop to about 74% and 77% as the larger circles take in more of the surrounding landscape.  The neighborhood size should match the scale of the process you are asking about (e.g., how far pollinators or seed dispersers move), since the answer depends on it.
-
-16. *(If you have time)* Is there any relationship between how much `Forest` is in a tree's neighborhood and the number of seeds (`N`) it produced?  Make a plot and describe what you see.
-
-```{r}
-lc %>%
-  filter( Category == "Forest" ) %>%
-  ggplot( aes( Proportion, N ) ) +
-  geom_point( aes( color = Type ) ) +
-  geom_smooth( method = "lm", formula = y ~ x ) +
-  labs( x = "Proportion Forest within 250 m",
-        y = "Seeds (N)" )
-
-lc %>%
-  filter( Category == "Forest" ) %>%
-  summarize( r = cor( Proportion, N ) )
-```
-
-> **Answer:** There is a weak negative trend (r ≈ −0.24): trees with more forest around them produced slightly fewer seeds.  It is weak, and forest cover is almost completely confounded with `Type`, so we cannot tell whether it is the forest or something else about the two habitats.
+> **Answer:** The overall picture does not change: `Urban` is mostly developed, `Native` mostly forest, and `Suburban` in between at both sizes.  The proportions shift by a few percent.  `Native` changes the most: wetland drops from about 13% to 9% and forest rises from 78% to 81%, suggesting these trees sit close to a creek or wetland that makes up less of a larger circle.  The neighborhood size should match the scale of the process being studied (e.g., how far pollinators move), because the numbers depend on it.

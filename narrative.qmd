@@ -26,8 +26,10 @@ We will:
 
 - Build `LINESTRING` and `POLYGON` objects *de novo* from a `data.frame` of coordinates.
 - Make polygons from the map data that comes with `ggplot2`.
-- Import real vector data from ESRI shapefiles.
-- Use spatial joins to select features by *where* they are instead of by a key column.
+- Use buffers, unions, and hulls to build polygons around real sampling locations.
+- Import vector data from ESRI shapefiles, the format most GIS software produces.
+- Use spatial joins to select and combine features by *where* they are instead of by a key column.
+- Measure the land cover inside polygons we have built.
 
 ## Lines
 
@@ -209,9 +211,126 @@ ggplot() +
   coord_sf()
 ```
 
+## Buffers and Neighborhoods
+
+Lines and polygons become really useful when we build them around real data.  Here we will use a set of dogwood trees sampled along a transect running from the city of Richmond, Virginia south to Pocahontas State Park.  Each row is a maternal tree, and the columns are:
+
+- `Mother`: The type of maternal tree, `Cultivar` or `Native`.
+- `Habitat`: Where it was sampled; `Urban` and `Suburban` cultivars (north and south of 37.45°N), and `Native` trees in the park.
+- `Tree`: An ID for the tree.
+- `Longitude` and `Latitude`: Its location (decimal degrees, WGS84).
+- `N`: The number of offspring (seeds) collected from that tree.
+- `Preliminary`: Whether it is one of a subset of 5 trees from each habitat.
+
+We will start with just the `Preliminary` trees.
+
+```{r}
+dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
+
+read_csv( dogwood_url ) %>%
+  filter( Preliminary ) %>%
+  st_as_sf( coords = c("Longitude", "Latitude"),
+            crs = 4326 ) -> trees
+trees
+```
+
+Buffers and areas are measured in the units of the coordinate reference system, and degrees of longitude and latitude are not a fixed distance on the ground.  So before building anything, we reproject the trees into UTM Zone 17N (EPSG 32617), whose units are meters.
+
+```{r}
+trees %>%
+  st_transform( crs = 32617 ) -> trees
+st_crs( trees )$Name
+```
+
+```{r}
+ggplot( trees ) +
+  geom_sf( aes( color = Habitat ), size = 3 ) +
+  coord_sf()
+```
+
+### Buffers
+
+A *buffer* is the polygon covering everything within some distance of a feature.  Buffering a point makes a circle, so `st_buffer()` turns each tree into a `POLYGON` representing its *neighborhood*.  Here I use 250 m.
+
+```{r}
+trees %>%
+  st_buffer( dist = 250 ) -> nbhd
+nbhd
+```
+
+Notice that each row keeps all of the tree's data; only the geometry has changed.  Each of these is `r format( round( as.numeric( st_area( nbhd[1, ] ) ) ), big.mark = "," )` m², slightly less than $\pi r^2 =$ `r format( round( pi * 250^2 ), big.mark = "," )` m², because the circle is approximated by a polygon with many short straight sides.
+
+```{r}
+st_area( nbhd ) %>%
+  head( n = 3 )
+```
+
+### Unions
+
+We can merge polygons together with `st_union()`.  When we `summarize()` an `sf` object, its geometries are unioned for each group, so this gives us one (`MULTIPOLYGON`) neighborhood for each habitat.
+
+```{r}
+nbhd %>%
+  group_by( Habitat ) %>%
+  summarize() -> habitat_nbhd
+habitat_nbhd
+```
+
+Five 250 m neighborhoods would cover `r round( 5 * as.numeric( st_area( nbhd[1, ] ) ) / 1e6, 2 )` km², but where they overlap the area is only counted once.
+
+```{r}
+habitat_nbhd %>%
+  mutate( Area = set_units( st_area( habitat_nbhd ), km^2 ) )
+```
+
+### Convex Hulls
+
+Another way to describe the area a group of points occupies is the *convex hull*, the smallest convex polygon containing all of them (think of stretching a rubber band around them).  We union the points in each habitat and wrap a hull around each.
+
+```{r}
+trees %>%
+  group_by( Habitat ) %>%
+  summarize() %>%
+  st_convex_hull() -> hulls
+hulls %>%
+  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+```
+
+### A Transect Corridor
+
+Finally, a transect running from the northernmost to the southernmost tree.  The `st_coordinates()` function returns the coordinates as a matrix, which we can use to find the two ends.
+
+```{r}
+y <- st_coordinates( trees )[ , "Y" ]
+trees[ y == max( y ) | y == min( y ), ] %>%
+  summarize() %>%
+  st_cast( "LINESTRING" ) -> transect
+st_length( transect ) %>%
+  set_units( km )
+```
+
+Buffering a line makes a corridor of a fixed width along it.
+
+```{r}
+transect %>%
+  st_buffer( dist = 250 ) -> corridor
+```
+
+Here they all are together.
+
+```{r}
+ggplot() +
+  geom_sf( aes( fill = Habitat ), alpha = 0.2, data = hulls ) +
+  geom_sf( fill = "grey60", color = NA, data = corridor ) +
+  geom_sf( aes( fill = Habitat ), data = nbhd ) +
+  geom_sf( data = trees, size = 0.5 ) +
+  coord_sf() +
+  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+```
+
 ## Shapefiles
 
-Most of the time we are not going to make vector data by hand; we will load it from a file someone else created.  A very common format for this is the ESRI *shapefile*, which can hold `POINT`, `LINESTRING`, `POLYGON` and other vector types.
+Most of the time we are not going to make vector data by hand; we will load it from a file someone else created, often with GIS software such as ArcGIS or QGIS.  This section is a tour of what that looks like in `R`.  A very common format for this is the ESRI *shapefile*, which can hold `POINT`, `LINESTRING`, `POLYGON` and other vector types.
 
 The first thing to understand is that *a shapefile* is not an actual file.  It is a collection of several files with the same name and different extensions, and they are usually zipped up into a single archive.
 
@@ -511,7 +630,92 @@ ggplot() +
   scale_fill_manual( values = c("grey90", "dodgerblue3") )
 ```
 
-To use a different relationship, pass it as the `.predicate`.  For example, `st_filter( fanRoads, target, .predicate = st_within )` would keep only the road segments that lie *completely* inside the district.  Go check out the `sf` cheatsheet for more spatial joins and options.
+To use a different relationship, pass it as the `.predicate`.  For example, `st_filter( fanRoads, target, .predicate = st_within )` would keep only the road segments that lie *completely* inside the district.
+
+`st_filter()` only keeps or drops rows.  To bring the *data* from one layer over to another, use `st_join()`.  It works like `left_join()`, but instead of matching on a key column, it matches rows whose geometries intersect.  Here every road segment picks up the zoning `Category` of the district(s) it touches.
+
+```{r}
+fanRoads %>%
+  st_join( theFan %>% select( Category ) ) -> roadZones
+
+roadZones %>%
+  st_drop_geometry() %>%
+  count( Category, sort = TRUE )
+```
+
+A segment that crosses from one district into another touches both, so it shows up once for each.
+
+Finally, `st_intersection()` cuts one layer by another, keeping only the parts that overlap.  Here it trims the road segments at the edge of the target district, so we can measure how much road is actually inside it.
+
+```{r}
+fanRoads %>%
+  st_intersection( st_geometry( target ) ) %>%
+  st_length() %>%
+  sum() %>%
+  set_units( km )
+```
+
+(The warning is the same one we saw with `st_crop()`: the pieces that are kept inherit the attributes of the segment they were cut from.)
+
+Go check out the `sf` cheatsheet for more spatial joins and options.
+
+## Land Cover
+
+Back to the dogwoods.  A natural question about the neighborhoods we built is: *what is in them?*  The [National Land Cover Database](https://www.mrlc.gov/data) (NLCD) classifies every 30 m × 30 m cell of the United States into one of 16 land cover classes (open water, four intensities of development, three kinds of forest, wetlands, agriculture, etc.).  Data like this, a grid of cells each holding a value, are called a *raster*, and we will learn to work with them directly in a later topic.
+
+For now, we will treat that part as a black box.  The function `get_landcover()` takes an `sf` object of polygons, finds the NLCD cells inside each one (using the 2021 NLCD for this study area), and returns the proportion of each polygon covered by each of seven broad categories: `Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`.  You can load it directly from its web address with `source()`, or download [the file](https://dyerlabteaching.github.io/Shapefiles/get_landcover.R) into your project and `source( "get_landcover.R" )`.
+
+```{r}
+source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+```
+
+Let's get the land cover for each tree's neighborhood.
+
+```{r}
+lc <- get_landcover( nbhd )
+lc
+```
+
+There is one row for each tree in each category (`r nrow( nbhd )` trees × 7 categories = `r nrow( lc )` rows), and each row carries along the tree's data.  That makes it easy to summarize with normal `dplyr` routines.  Here is the average proportion of each category, for each habitat.
+
+```{r}
+lc %>%
+  group_by( Habitat, Category ) %>%
+  summarize( Proportion = mean( Proportion ),
+             .groups = "drop" ) -> habitat_lc
+
+habitat_lc %>%
+  pivot_wider( names_from = Habitat,
+               values_from = Proportion ) %>%
+  knitr::kable( digits = 3 )
+```
+
+Or graphically, as a bar chart.
+
+```{r}
+ggplot( habitat_lc,
+        aes( Category, Proportion, fill = Habitat ) ) +
+  geom_col( position = "dodge" ) +
+  coord_flip() +
+  labs( x = NULL,
+        y = "Average proportion of a 250 m neighborhood" )
+```
+
+The habitats are clearly different.  The `Urban` trees live in neighborhoods that are almost entirely developed, the `Native` trees in mostly forested ones, and the `Suburban` trees in between, with a bit more forest and wetland mixed in.
+
+The same function works on any polygons, not just buffers.  Here is the land cover in the transect corridor compared with the habitat neighborhoods.
+
+```{r}
+corridor %>%
+  mutate( Habitat = "Transect" ) %>%
+  get_landcover() %>%
+  bind_rows( habitat_lc ) %>%
+  pivot_wider( names_from = Habitat,
+               values_from = Proportion ) %>%
+  knitr::kable( digits = 3 )
+```
+
+A single straight transect averages over everything between its endpoints, so it does not look like any of the places the trees actually are.
 
 [^1]: **Dyer's First Law**: Reproject then forget about it!
 

@@ -73,6 +73,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="narrative_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="narrative_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -112,8 +141,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>Build <code>LINESTRING</code> and <code>POLYGON</code> objects <em>de novo</em> from a <code>data.frame</code> of coordinates.</li>
 <li>Make polygons from the map data that comes with <code>ggplot2</code>.</li>
-<li>Import real vector data from ESRI shapefiles.</li>
-<li>Use spatial joins to select features by <em>where</em> they are instead of by a key column.</li>
+<li>Use buffers, unions, and hulls to build polygons around real sampling locations.</li>
+<li>Import vector data from ESRI shapefiles, the format most GIS software produces.</li>
+<li>Use spatial joins to select and combine features by <em>where</em> they are instead of by a key column.</li>
+<li>Measure the land cover inside polygons we have built.</li>
 </ul>
 <section id="lines" class="level2">
 <h2 class="anchored" data-anchor-id="lines">Lines</h2>
@@ -428,30 +459,255 @@ Attaching package: 'maps'</code></pre>
 </div>
 </section>
 </section>
+<section id="buffers-and-neighborhoods" class="level2">
+<h2 class="anchored" data-anchor-id="buffers-and-neighborhoods">Buffers and Neighborhoods</h2>
+<p>Lines and polygons become really useful when we build them around real data. Here we will use a set of dogwood trees sampled along a transect running from the city of Richmond, Virginia south to Pocahontas State Park. Each row is a maternal tree, and the columns are:</p>
+<ul>
+<li><code>Mother</code>: The type of maternal tree, <code>Cultivar</code> or <code>Native</code>.</li>
+<li><code>Habitat</code>: Where it was sampled; <code>Urban</code> and <code>Suburban</code> cultivars (north and south of 37.45°N), and <code>Native</code> trees in the park.</li>
+<li><code>Tree</code>: An ID for the tree.</li>
+<li><code>Longitude</code> and <code>Latitude</code>: Its location (decimal degrees, WGS84).</li>
+<li><code>N</code>: The number of offspring (seeds) collected from that tree.</li>
+<li><code>Preliminary</code>: Whether it is one of a subset of 5 trees from each habitat.</li>
+</ul>
+<p>We will start with just the <code>Preliminary</code> trees.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>dogwood_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>( dogwood_url ) <span class="sc">%&gt;%</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( Preliminary ) <span class="sc">%&gt;%</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_as_sf</span>( <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"Longitude"</span>, <span class="st">"Latitude"</span>),</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">crs =</span> <span class="dv">4326</span> ) <span class="ot">-&gt;</span> trees</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 58 Columns: 7
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (3): Mother, Habitat, Tree
+dbl (3): Longitude, Latitude, N
+lgl (1): Preliminary
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>trees</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 15 features and 5 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: -77.54097 ymin: 37.38367 xmax: -77.45584 ymax: 37.51072
+Geodetic CRS:  WGS 84
+# A tibble: 15 × 6
+   Mother   Habitat  Tree        N Preliminary             geometry
+ * &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt; &lt;lgl&gt;                &lt;POINT [°]&gt;
+ 1 Cultivar Urban    102UWP     18 TRUE         (-77.4651 37.48038)
+ 2 Cultivar Urban    103UWP     13 TRUE        (-77.46606 37.49982)
+ 3 Cultivar Urban    105UWP     15 TRUE        (-77.47115 37.51072)
+ 4 Cultivar Suburban 108UWP     18 TRUE         (-77.4995 37.43491)
+ 5 Cultivar Urban    109UWP     24 TRUE        (-77.47308 37.49297)
+ 6 Cultivar Suburban 112UWP     16 TRUE        (-77.49156 37.41399)
+ 7 Cultivar Suburban 116UWP     15 TRUE         (-77.5079 37.42863)
+ 8 Cultivar Suburban 120UWP     15 TRUE         (-77.5113 37.42788)
+ 9 Cultivar Urban    125UWP     17 TRUE        (-77.45584 37.50948)
+10 Cultivar Suburban 134UWP     16 TRUE        (-77.54078 37.42677)
+11 Native   Native   1033PWP    19 TRUE        (-77.53267 37.39687)
+12 Native   Native   1037PWP     7 TRUE        (-77.53136 37.39264)
+13 Native   Native   1040PWP     6 TRUE         (-77.53101 37.3894)
+14 Native   Native   1081PWP    19 TRUE         (-77.5384 37.39905)
+15 Native   Native   361PWP      8 TRUE        (-77.54097 37.38367)</code></pre>
+</div>
+</div>
+<p>Buffers and areas are measured in the units of the coordinate reference system, and degrees of longitude and latitude are not a fixed distance on the ground. So before building anything, we reproject the trees into UTM Zone 17N (EPSG 32617), whose units are meters.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>trees <span class="sc">%&gt;%</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>( <span class="at">crs =</span> <span class="dv">32617</span> ) <span class="ot">-&gt;</span> trees</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>( trees )<span class="sc">$</span>Name</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "WGS 84 / UTM zone 17N"</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( trees ) <span class="sc">+</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">color =</span> Habitat ), <span class="at">size =</span> <span class="dv">3</span> ) <span class="sc">+</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="narrative_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="buffers" class="level3">
+<h3 class="anchored" data-anchor-id="buffers">Buffers</h3>
+<p>A <em>buffer</em> is the polygon covering everything within some distance of a feature. Buffering a point makes a circle, so <code>st_buffer()</code> turns each tree into a <code>POLYGON</code> representing its <em>neighborhood</em>. Here I use 250 m.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>trees <span class="sc">%&gt;%</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>( <span class="at">dist =</span> <span class="dv">250</span> ) <span class="ot">-&gt;</span> nbhd</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>nbhd</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 15 features and 5 fields
+Geometry type: POLYGON
+Dimension:     XY
+Bounding box:  xmin: 805858.1 ymin: 4142802 xmax: 813531 ymax: 4157634
+Projected CRS: WGS 84 / UTM zone 17N
+# A tibble: 15 × 6
+   Mother   Habitat  Tree        N Preliminary                          geometry
+ * &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt; &lt;lgl&gt;                           &lt;POLYGON [m]&gt;
+ 1 Cultivar Urban    102UWP     18 TRUE        ((812833.7 4154036, 812833.4 415…
+ 2 Cultivar Urban    103UWP     13 TRUE        ((812667.7 4156191, 812667.3 415…
+ 3 Cultivar Urban    105UWP     15 TRUE        ((812172.1 4157384, 812171.8 415…
+ 4 Cultivar Suburban 108UWP     18 TRUE        ((809978.6 4148875, 809978.2 414…
+ 5 Cultivar Urban    109UWP     24 TRUE        ((812075.4 4155407, 812075.1 415…
+ 6 Cultivar Suburban 112UWP     16 TRUE        ((810767.8 4146580, 810767.5 414…
+ 7 Cultivar Suburban 116UWP     15 TRUE        ((809260.9 4148151, 809260.6 414…
+ 8 Cultivar Suburban 120UWP     15 TRUE        ((808963.1 4148056, 808962.7 414…
+ 9 Cultivar Urban    125UWP     17 TRUE        ((813531 4157297, 813530.7 41572…
+10 Cultivar Suburban 134UWP     16 TRUE        ((806358.1 4147837, 806357.7 414…
+11 Native   Native   1033PWP    19 TRUE        ((807198.1 4144545, 807197.8 414…
+12 Native   Native   1037PWP     7 TRUE        ((807331.4 4144079, 807331.1 414…
+13 Native   Native   1040PWP     6 TRUE        ((807375.6 4143721, 807375.3 414…
+14 Native   Native   1081PWP    19 TRUE        ((806681.8 4144768, 806681.5 414…
+15 Native   Native   361PWP      8 TRUE        ((806516.9 4143052, 806516.6 414…</code></pre>
+</div>
+</div>
+<p>Notice that each row keeps all of the tree’s data; only the geometry has changed. Each of these is 196,260 m², slightly less than <span class="math inline">\(\pi r^2 =\)</span> 196,350 m², because the circle is approximated by a polygon with many short straight sides.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_area</span>( nbhd ) <span class="sc">%&gt;%</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>( <span class="at">n =</span> <span class="dv">3</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Units: [m^2]
+[1] 196259.8 196259.8 196259.8</code></pre>
+</div>
+</div>
+</section>
+<section id="unions" class="level3">
+<h3 class="anchored" data-anchor-id="unions">Unions</h3>
+<p>We can merge polygons together with <code>st_union()</code>. When we <code>summarize()</code> an <code>sf</code> object, its geometries are unioned for each group, so this gives us one (<code>MULTIPOLYGON</code>) neighborhood for each habitat.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>nbhd <span class="sc">%&gt;%</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>( Habitat ) <span class="sc">%&gt;%</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>() <span class="ot">-&gt;</span> habitat_nbhd</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>habitat_nbhd</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 3 features and 1 field
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: 805858.1 ymin: 4142802 xmax: 813531 ymax: 4157634
+Projected CRS: WGS 84 / UTM zone 17N
+# A tibble: 3 × 2
+  Habitat                                                               geometry
+  &lt;chr&gt;                                                       &lt;MULTIPOLYGON [m]&gt;
+1 Native   (((806515.5 4143026, 806513.8 4143013, 806511.4 4143000, 806508.4 41…
+2 Suburban (((810766.5 4146553, 810764.8 4146540, 810762.4 4146528, 810759.3 41…
+3 Urban    (((812832.3 4154010, 812830.6 4153997, 812828.2 4153984, 812825.2 41…</code></pre>
+</div>
+</div>
+<p>Five 250 m neighborhoods would cover 0.98 km², but where they overlap the area is only counted once.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>habitat_nbhd <span class="sc">%&gt;%</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Area =</span> <span class="fu">set_units</span>( <span class="fu">st_area</span>( habitat_nbhd ), km<span class="sc">^</span><span class="dv">2</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 3 features and 2 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: 805858.1 ymin: 4142802 xmax: 813531 ymax: 4157634
+Projected CRS: WGS 84 / UTM zone 17N
+# A tibble: 3 × 3
+  Habitat                                                         geometry  Area
+* &lt;chr&gt;                                                 &lt;MULTIPOLYGON [m]&gt; [km^…
+1 Native   (((806515.5 4143026, 806513.8 4143013, 806511.4 4143000, 80650… 0.947
+2 Suburban (((810766.5 4146553, 810764.8 4146540, 810762.4 4146528, 81075… 0.930
+3 Urban    (((812832.3 4154010, 812830.6 4153997, 812828.2 4153984, 81282… 0.981</code></pre>
+</div>
+</div>
+</section>
+<section id="convex-hulls" class="level3">
+<h3 class="anchored" data-anchor-id="convex-hulls">Convex Hulls</h3>
+<p>Another way to describe the area a group of points occupies is the <em>convex hull</em>, the smallest convex polygon containing all of them (think of stretching a rubber band around them). We union the points in each habitat and wrap a hull around each.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>trees <span class="sc">%&gt;%</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>( Habitat ) <span class="sc">%&gt;%</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_convex_hull</span>() <span class="ot">-&gt;</span> hulls</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>hulls <span class="sc">%&gt;%</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Area =</span> <span class="fu">set_units</span>( <span class="fu">st_area</span>( hulls ), km<span class="sc">^</span><span class="dv">2</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 3 features and 2 fields
+Geometry type: POLYGON
+Dimension:     XY
+Bounding box:  xmin: 806108.1 ymin: 4143052 xmax: 813281 ymax: 4157384
+Projected CRS: WGS 84 / UTM zone 17N
+# A tibble: 3 × 3
+  Habitat                                                         geometry  Area
+* &lt;chr&gt;                                                      &lt;POLYGON [m]&gt; [km^…
+1 Native   ((806266.9 4143052, 806431.8 4144768, 806948.1 4144545, 807081… 0.888
+2 Suburban ((810517.8 4146580, 806108.1 4147837, 809728.6 4148875, 810517… 4.57 
+3 Urban    ((812583.7 4154036, 811825.4 4155407, 811922.1 4157384, 813281… 3.06 </code></pre>
+</div>
+</div>
+</section>
+<section id="a-transect-corridor" class="level3">
+<h3 class="anchored" data-anchor-id="a-transect-corridor">A Transect Corridor</h3>
+<p>Finally, a transect running from the northernmost to the southernmost tree. The <code>st_coordinates()</code> function returns the coordinates as a matrix, which we can use to find the two ends.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">st_coordinates</span>( trees )[ , <span class="st">"Y"</span> ]</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>trees[ y <span class="sc">==</span> <span class="fu">max</span>( y ) <span class="sc">|</span> y <span class="sc">==</span> <span class="fu">min</span>( y ), ] <span class="sc">%&gt;%</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_cast</span>( <span class="st">"LINESTRING"</span> ) <span class="ot">-&gt;</span> transect</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="fu">st_length</span>( transect ) <span class="sc">%&gt;%</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_units</span>( km )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>15.40684 [km]</code></pre>
+</div>
+</div>
+<p>Buffering a line makes a corridor of a fixed width along it.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>transect <span class="sc">%&gt;%</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>( <span class="at">dist =</span> <span class="dv">250</span> ) <span class="ot">-&gt;</span> corridor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Here they all are together.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Habitat ), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">data =</span> hulls ) <span class="sc">+</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="at">fill =</span> <span class="st">"grey60"</span>, <span class="at">color =</span> <span class="cn">NA</span>, <span class="at">data =</span> corridor ) <span class="sc">+</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Habitat ), <span class="at">data =</span> nbhd ) <span class="sc">+</span></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="at">data =</span> trees, <span class="at">size =</span> <span class="fl">0.5</span> ) <span class="sc">+</span></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>() <span class="sc">+</span></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>( <span class="at">axis.text.x =</span> <span class="fu">element_text</span>( <span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="narrative_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
 <section id="shapefiles" class="level2">
 <h2 class="anchored" data-anchor-id="shapefiles">Shapefiles</h2>
-<p>Most of the time we are not going to make vector data by hand; we will load it from a file someone else created. A very common format for this is the ESRI <em>shapefile</em>, which can hold <code>POINT</code>, <code>LINESTRING</code>, <code>POLYGON</code> and other vector types.</p>
+<p>Most of the time we are not going to make vector data by hand; we will load it from a file someone else created, often with GIS software such as ArcGIS or QGIS. This section is a tour of what that looks like in <code>R</code>. A very common format for this is the ESRI <em>shapefile</em>, which can hold <code>POINT</code>, <code>LINESTRING</code>, <code>POLYGON</code> and other vector types.</p>
 <p>The first thing to understand is that <em>a shapefile</em> is not an actual file. It is a collection of several files with the same name and different extensions, and they are usually zipped up into a single archive.</p>
 <section id="downloading-the-archives" class="level3">
 <h3 class="anchored" data-anchor-id="downloading-the-archives">Downloading the Archives</h3>
 <p>For this topic we will use roads and zoning districts for Richmond, Virginia, made available by the GIS Department of the City of Richmond. Here are the two archives in the <a href="https://dyerlabteaching.github.io/CourseData/">course data repository</a>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>You can download them with your browser and move them into your project folder, or you can have <code>R</code> download them. The <code>destfile</code> argument says where to save each archive. Here I put them in a temporary folder (<code>tempdir()</code>) so the raw files do not clutter up the project, but on your own computer you will usually save them into a <code>data</code> folder in your project (e.g., <code>destfile = "data/Roads.zip"</code>) so you only have to download them once.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>shp_dir <span class="ot">&lt;-</span> <span class="fu">tempdir</span>()</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( roads_url, <span class="at">destfile =</span> <span class="fu">file.path</span>( shp_dir, <span class="st">"Roads.zip"</span> ) )</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( district_url, <span class="at">destfile =</span> <span class="fu">file.path</span>( shp_dir, <span class="st">"Districts.zip"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>shp_dir <span class="ot">&lt;-</span> <span class="fu">tempdir</span>()</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( roads_url, <span class="at">destfile =</span> <span class="fu">file.path</span>( shp_dir, <span class="st">"Roads.zip"</span> ) )</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>( district_url, <span class="at">destfile =</span> <span class="fu">file.path</span>( shp_dir, <span class="st">"Districts.zip"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="unzipping" class="level3">
 <h3 class="anchored" data-anchor-id="unzipping">Unzipping</h3>
 <p>Before we can use them, we need to unzip them. You can do this in your computer’s file browser, or have <code>R</code> do it. The <code>exdir</code> argument tells <code>unzip()</code> where to put the expanded files.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Roads.zip"</span> ), <span class="at">exdir =</span> shp_dir )</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Districts.zip"</span> ), <span class="at">exdir =</span> shp_dir )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Roads.zip"</span> ), <span class="at">exdir =</span> shp_dir )</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Districts.zip"</span> ), <span class="at">exdir =</span> shp_dir )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Depending upon how the archives were created, they may expand into a subfolder or just put a pile of files in the same folder. For this example, there is one of each: the <code>Zoning_Districts.*</code> files are expanded directly into the folder and the roads are expanded into a subfolder named <code>Centerlines-shp</code>.</p>
 <div class="quarto-figure quarto-figure-center">
@@ -461,7 +717,7 @@ Attaching package: 'maps'</code></pre>
 </figure>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list.files</span>( shp_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">pattern =</span> <span class="st">"Zoning|tran_"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list.files</span>( shp_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">pattern =</span> <span class="st">"Zoning|tran_"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "Centerlines-shp/tran_Carriageway.cpg"
  [2] "Centerlines-shp/tran_Carriageway.dbf"
@@ -498,10 +754,10 @@ Attaching package: 'maps'</code></pre>
 <h3 class="anchored" data-anchor-id="loading-a-shapefile">Loading a Shapefile</h3>
 <p>To load a shapefile, we use <code>st_read()</code> and pass it the path to the <code>.shp</code> file. It finds the other component files on its own.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/Rtmp0Z9KZD/Zoning_Districts.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpLiaJ8R/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -512,11 +768,11 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 </div>
 <p>The result is an <code>sf</code> object. The attributes from the <code>.dbf</code> file are put into the <code>data.frame</code> and the <code>geometry</code> column is built from the <code>.shp</code> file. Each row here is a <code>MULTIPOLYGON</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "sf"         "data.frame"</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>( districts, <span class="at">n =</span> <span class="dv">2</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>( districts, <span class="at">n =</span> <span class="dv">2</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 2 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -543,7 +799,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <h3 class="anchored" data-anchor-id="simplifying-the-data">Simplifying the Data</h3>
 <p>There are a lot of columns here, many of which are bookkeeping from the GIS department.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "OBJECTID"   "Name"       "Ordinance"  "OrdinanceP" "Conditiona"
  [6] "AdoptionDa" "Comment"    "CreatedBy"  "CreatedDat" "EditBy"    
@@ -552,10 +808,10 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 </div>
 <p>Let’s drop the ones we do not need. <code>Shape__Are</code> and <code>Shape__Len</code> are the area and perimeter of each polygon, which we can always recalculate with <code>st_area()</code> and <code>st_perimeter()</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate ) <span class="sc">%&gt;%</span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len ) <span class="ot">-&gt;</span> districts</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>( districts, <span class="at">n =</span> <span class="dv">1</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate ) <span class="sc">%&gt;%</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len ) <span class="ot">-&gt;</span> districts</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>( districts, <span class="at">n =</span> <span class="dv">1</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 1 feature and 7 fields
 Geometry type: MULTIPOLYGON
@@ -570,7 +826,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 </div>
 <p>The <code>Name</code> column holds the zoning code for each district.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>districts<span class="sc">$</span>Name <span class="sc">%&gt;%</span> <span class="fu">unique</span>() <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>districts<span class="sc">$</span>Name <span class="sc">%&gt;%</span> <span class="fu">unique</span>() <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "B-1"     "B-2"     "B-3"     "B-4"     "B-5"     "B-6"     "B-7"    
  [8] "CM"      "DCC"     "I"       "M-1"     "M-2"     "OS"      "R-1"    
@@ -587,25 +843,25 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <h3 class="anchored" data-anchor-id="visualizing">Visualizing</h3>
 <p>We can plot it normally using <code>plot()</code> for <code>sf</code> objects, coloring by zoning code,</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( districts[<span class="st">"Name"</span>] )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( districts[<span class="st">"Name"</span>] )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>and we can overlay one district on top of all of them by plotting just the geometry (<code>st_geometry()</code>) and then adding a second layer with <code>add = TRUE</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( districts ) )</span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( districts[ districts<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">530</span>, ] ),</span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="st">"red"</span>,</span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">add =</span> <span class="cn">TRUE</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( districts ) )</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( districts[ districts<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">530</span>, ] ),</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="st">"red"</span>,</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">add =</span> <span class="cn">TRUE</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -619,10 +875,10 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <h3 class="anchored" data-anchor-id="a-second-data-set">A Second Data Set</h3>
 <p>Let’s load in the roads. This shapefile was in the <code>Centerlines-shp</code> subfolder.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/Rtmp0Z9KZD/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpLiaJ8R/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -630,7 +886,7 @@ Dimension:     XY
 Bounding box:  xmin: 11734060 ymin: 3682790 xmax: 11817490 ymax: 3751927
 Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>( road.shapefile )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>( road.shapefile )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "FID"        "Carriagewa" "AssetID"    "StreetType" "Functional"
  [6] "FIPS"       "LeftFromAd" "LeftToAddr" "RightFromA" "RightToAdd"
@@ -646,29 +902,29 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h3 class="anchored" data-anchor-id="check-projections">Check Projections</h3>
 <p>Before combining two spatial data sets, you must make sure they are in the same projection<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>( road.shapefile ) <span class="sc">==</span> <span class="fu">st_crs</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>( road.shapefile ) <span class="sc">==</span> <span class="fu">st_crs</span>( districts )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
 </div>
 </div>
 <p>These are both from the same GIS department, so they match. If they differed, we would reproject one to match the other with <code>st_transform()</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="sc">%&gt;%</span></span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>( <span class="at">crs =</span> <span class="fu">st_crs</span>( districts ) ) <span class="ot">-&gt;</span> road.shapefile</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="sc">%&gt;%</span></span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>( <span class="at">crs =</span> <span class="fu">st_crs</span>( districts ) ) <span class="ot">-&gt;</span> road.shapefile</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="data-cleanup" class="level3">
 <h3 class="anchored" data-anchor-id="data-cleanup">Data Cleanup</h3>
 <p>Let’s keep only the columns we need, rename a couple of the abbreviated ones, and make the categorical columns into factors.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="sc">%&gt;%</span></span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( FullName, OneWay, StreetType,</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">SpeedLimit =</span> PostedSpee,</span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">Length =</span> SHAPE_Leng,</span>
-<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>          geometry ) <span class="sc">%&gt;%</span></span>
-<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">OneWay =</span> <span class="fu">factor</span>( OneWay ),</span>
-<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">StreetType =</span> <span class="fu">factor</span>( StreetType ) ) <span class="ot">-&gt;</span> roads</span>
-<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( roads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>road.shapefile <span class="sc">%&gt;%</span></span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( FullName, OneWay, StreetType,</span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">SpeedLimit =</span> PostedSpee,</span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">Length =</span> SHAPE_Leng,</span>
+<span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a>          geometry ) <span class="sc">%&gt;%</span></span>
+<span id="cb81-6"><a href="#cb81-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">OneWay =</span> <span class="fu">factor</span>( OneWay ),</span>
+<span id="cb81-7"><a href="#cb81-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">StreetType =</span> <span class="fu">factor</span>( StreetType ) ) <span class="ot">-&gt;</span> roads</span>
+<span id="cb81-8"><a href="#cb81-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( roads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      FullName     OneWay                    StreetType      SpeedLimit   
  Length   :29081   1  :    2   Alley              : 3139   Min.   : 0.00  
@@ -693,11 +949,11 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h3 class="anchored" data-anchor-id="filtering-and-plotting-lines">Filtering and Plotting Lines</h3>
 <p>Since <code>roads</code> is a <code>data.frame</code>, we can use normal <code>dplyr</code> routines on it. Here I grab just the highways, interchanges, and ramps,</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( StreetType <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Highway"</span>,</span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"Highway Interchange"</span>,</span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"Ramp"</span>) ) <span class="ot">-&gt;</span> highways</span>
-<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( highways )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( StreetType <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Highway"</span>,</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"Highway Interchange"</span>,</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"Ramp"</span>) ) <span class="ot">-&gt;</span> highways</span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>( highways )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      FullName   OneWay                  StreetType    SpeedLimit   
  Length   :855   1  :  0   Alley              :  0   Min.   : 0.00  
@@ -719,40 +975,40 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 </div>
 <p>and plot them colored by speed limit.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( highways[<span class="st">"SpeedLimit"</span>], <span class="at">lwd =</span> <span class="dv">4</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( highways[<span class="st">"SpeedLimit"</span>], <span class="at">lwd =</span> <span class="dv">4</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-47-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>For any particular street, say <em>Three Chopt Road</em>, we can filter out the rows for it.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( FullName <span class="sc">==</span> <span class="st">"Three Chopt Road"</span> ) <span class="ot">-&gt;</span> three_chopt</span>
-<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>( three_chopt )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( FullName <span class="sc">==</span> <span class="st">"Three Chopt Road"</span> ) <span class="ot">-&gt;</span> three_chopt</span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>( three_chopt )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 65</code></pre>
 </div>
 </div>
 <p>The road is made of 65 separate <code>LINESTRING</code> segments. Each one is a sequence of points, which we can see as text,</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>three_chopt<span class="sc">$</span>geometry[<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">st_as_text</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>three_chopt<span class="sc">$</span>geometry[<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">st_as_text</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "LINESTRING (11763416 3739109, 11763452 3739376)"</code></pre>
 </div>
 </div>
 <p>or plot all of them together.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( three_chopt ) <span class="sc">+</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">color =</span> SpeedLimit ), <span class="at">linewidth =</span> <span class="dv">2</span> ) <span class="sc">+</span></span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( three_chopt ) <span class="sc">+</span></span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">color =</span> SpeedLimit ), <span class="at">linewidth =</span> <span class="dv">2</span> ) <span class="sc">+</span></span>
+<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-50-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -762,22 +1018,22 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h3 class="anchored" data-anchor-id="cropping-to-the-fan">Cropping to The Fan</h3>
 <p>Let’s focus on the area around VCU and <em>The Fan</em>. The large residential district in the middle of the Fan is <code>OBJECTID == 368</code>. To get a region around it, I buffer that polygon by 1500 feet (the units of this projection), take the bounding box of the result, and then crop all the districts to that box.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( OBJECTID <span class="sc">==</span> <span class="dv">368</span> ) <span class="sc">%&gt;%</span></span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>( <span class="at">dist =</span> <span class="dv">1500</span> ) <span class="sc">%&gt;%</span></span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_bbox</span>() <span class="ot">-&gt;</span> fan_bbox</span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
-<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_crop</span>( fan_bbox ) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( OBJECTID <span class="sc">==</span> <span class="dv">368</span> ) <span class="sc">%&gt;%</span></span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>( <span class="at">dist =</span> <span class="dv">1500</span> ) <span class="sc">%&gt;%</span></span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_bbox</span>() <span class="ot">-&gt;</span> fan_bbox</span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true" tabindex="-1"></a>districts <span class="sc">%&gt;%</span></span>
+<span id="cb91-7"><a href="#cb91-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_crop</span>( fan_bbox ) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: attribute variables are assumed to be spatially constant throughout
 all geometries</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( theFan[<span class="st">"Name"</span>] )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( theFan[<span class="st">"Name"</span>] )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-51-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -788,16 +1044,16 @@ all geometries</code></pre>
 <h3 class="anchored" data-anchor-id="adding-auxiliary-data">Adding Auxiliary Data</h3>
 <p>The zoning codes are not very descriptive. There is a csv file with a translation in the course data repository, and we can <code>left_join()</code> it to <code>theFan</code> by the <code>Name</code> column as it is read in<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>zone_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"</span></span>
-<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
-<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>( <span class="fu">read_csv</span>( zone_url ),</span>
-<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">by =</span> <span class="st">"Name"</span> ) <span class="sc">%&gt;%</span></span>
-<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Category =</span> <span class="fu">factor</span>( Category ) ) <span class="sc">%&gt;%</span></span>
-<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( OBJECTID,</span>
-<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>          Name,</span>
-<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>          Category,</span>
-<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>          <span class="fu">everything</span>() ) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>zone_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"</span></span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
+<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>( <span class="fu">read_csv</span>( zone_url ),</span>
+<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">by =</span> <span class="st">"Name"</span> ) <span class="sc">%&gt;%</span></span>
+<span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Category =</span> <span class="fu">factor</span>( Category ) ) <span class="sc">%&gt;%</span></span>
+<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( OBJECTID,</span>
+<span id="cb94-8"><a href="#cb94-8" aria-hidden="true" tabindex="-1"></a>          Name,</span>
+<span id="cb94-9"><a href="#cb94-9" aria-hidden="true" tabindex="-1"></a>          Category,</span>
+<span id="cb94-10"><a href="#cb94-10" aria-hidden="true" tabindex="-1"></a>          <span class="fu">everything</span>() ) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 27 Columns: 2
 ── Column specification ────────────────────────────────────────────────────────
@@ -809,14 +1065,14 @@ chr (2): Name, Category
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( theFan ) <span class="sc">+</span></span>
-<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Category ) ) <span class="sc">+</span></span>
-<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>( <span class="at">type =</span> <span class="st">"qual"</span>,</span>
-<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">palette =</span> <span class="st">"Set3"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( theFan ) <span class="sc">+</span></span>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Category ) ) <span class="sc">+</span></span>
+<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>( <span class="at">type =</span> <span class="st">"qual"</span>,</span>
+<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">palette =</span> <span class="st">"Set3"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-42-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-53-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -827,18 +1083,18 @@ chr (2): Name, Category
 <h3 class="anchored" data-anchor-id="cropping-the-roads">Cropping the Roads</h3>
 <p>We can crop the roads to the same box.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_crop</span>( <span class="fu">st_bbox</span>( theFan ) ) <span class="ot">-&gt;</span> fanRoads</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>roads <span class="sc">%&gt;%</span></span>
+<span id="cb97-2"><a href="#cb97-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_crop</span>( <span class="fu">st_bbox</span>( theFan ) ) <span class="ot">-&gt;</span> fanRoads</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: attribute variables are assumed to be spatially constant throughout
 all geometries</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( theFan ), <span class="at">lwd =</span> <span class="dv">2</span> )</span>
-<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( fanRoads ), <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">add =</span> <span class="cn">TRUE</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( theFan ), <span class="at">lwd =</span> <span class="dv">2</span> )</span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( fanRoads ), <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">add =</span> <span class="cn">TRUE</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-43-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-54-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -848,30 +1104,30 @@ all geometries</code></pre>
 <h3 class="anchored" data-anchor-id="selecting-a-single-zone">Selecting a Single Zone</h3>
 <p>Let’s mark the target district in <code>theFan</code> with a new column, and plot it with each district’s <code>OBJECTID</code> as a label so we can see which one it is.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Target =</span> OBJECTID <span class="sc">==</span> <span class="dv">368</span> ) <span class="ot">-&gt;</span> theFan</span>
-<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
-<span id="cb79-5"><a href="#cb79-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb79-6"><a href="#cb79-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Target ) ) <span class="sc">+</span></span>
-<span id="cb79-7"><a href="#cb79-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf_text</span>( <span class="fu">aes</span>( <span class="at">label =</span> OBJECTID ), <span class="at">size =</span> <span class="dv">3</span> ) <span class="sc">+</span></span>
-<span id="cb79-8"><a href="#cb79-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Target =</span> OBJECTID <span class="sc">==</span> <span class="dv">368</span> ) <span class="ot">-&gt;</span> theFan</span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>theFan <span class="sc">%&gt;%</span></span>
+<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Target ) ) <span class="sc">+</span></span>
+<span id="cb100-7"><a href="#cb100-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf_text</span>( <span class="fu">aes</span>( <span class="at">label =</span> OBJECTID ), <span class="at">size =</span> <span class="dv">3</span> ) <span class="sc">+</span></span>
+<span id="cb100-8"><a href="#cb100-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>And then pull it out as its own <code>sf</code> object.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> theFan <span class="sc">%&gt;%</span> <span class="fu">filter</span>( OBJECTID <span class="sc">==</span> <span class="dv">368</span> )</span>
-<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( target ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> theFan <span class="sc">%&gt;%</span> <span class="fu">filter</span>( OBJECTID <span class="sc">==</span> <span class="dv">368</span> )</span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">st_geometry</span>( target ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-45-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-56-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -881,20 +1137,20 @@ all geometries</code></pre>
 <h3 class="anchored" data-anchor-id="spatial-joins">Spatial Joins</h3>
 <p>Now for the question we have been building toward: <em>which roads cross this district?</em> The <code>st_filter()</code> function keeps the rows of one <code>sf</code> object that satisfy a spatial relationship with another. By default, that relationship is <code>st_intersects()</code>, meaning they share at least one point.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>fanRoads <span class="sc">%&gt;%</span></span>
-<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_filter</span>( target ) <span class="ot">-&gt;</span> targetRoads</span>
-<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>( targetRoads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb102"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a>fanRoads <span class="sc">%&gt;%</span></span>
+<span id="cb102-2"><a href="#cb102-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_filter</span>( target ) <span class="ot">-&gt;</span> targetRoads</span>
+<span id="cb102-3"><a href="#cb102-3" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>( targetRoads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 553</code></pre>
 </div>
 </div>
 <p>Those are 553 road segments. To get the street names, we drop the geometry with <code>st_drop_geometry()</code> (otherwise the <code>geometry</code> column comes along for the ride) and use normal <code>dplyr</code> routines.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>targetRoads <span class="sc">%&gt;%</span></span>
-<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName ) <span class="sc">%&gt;%</span></span>
-<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a>targetRoads <span class="sc">%&gt;%</span></span>
+<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb104-3"><a href="#cb104-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName ) <span class="sc">%&gt;%</span></span>
+<span id="cb104-4"><a href="#cb104-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb104-5"><a href="#cb104-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Street Name
 1          Allison St
@@ -940,20 +1196,251 @@ all geometries</code></pre>
 </div>
 <p>And we can plot them on top of the districts, with the target highlighted.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Target ), <span class="at">data =</span> theFan ) <span class="sc">+</span></span>
-<span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="at">color =</span> <span class="st">"darkgreen"</span>, <span class="at">data =</span> targetRoads ) <span class="sc">+</span></span>
-<span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>( <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"grey90"</span>, <span class="st">"dodgerblue3"</span>) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb106"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">fill =</span> Target ), <span class="at">data =</span> theFan ) <span class="sc">+</span></span>
+<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>( <span class="at">color =</span> <span class="st">"darkgreen"</span>, <span class="at">data =</span> targetRoads ) <span class="sc">+</span></span>
+<span id="cb106-4"><a href="#cb106-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>( <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"grey90"</span>, <span class="st">"dodgerblue3"</span>) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="narrative_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="narrative_files/figure-html/unnamed-chunk-59-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>To use a different relationship, pass it as the <code>.predicate</code>. For example, <code>st_filter( fanRoads, target, .predicate = st_within )</code> would keep only the road segments that lie <em>completely</em> inside the district. Go check out the <code>sf</code> cheatsheet for more spatial joins and options.</p>
+<p>To use a different relationship, pass it as the <code>.predicate</code>. For example, <code>st_filter( fanRoads, target, .predicate = st_within )</code> would keep only the road segments that lie <em>completely</em> inside the district.</p>
+<p><code>st_filter()</code> only keeps or drops rows. To bring the <em>data</em> from one layer over to another, use <code>st_join()</code>. It works like <code>left_join()</code>, but instead of matching on a key column, it matches rows whose geometries intersect. Here every road segment picks up the zoning <code>Category</code> of the district(s) it touches.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>fanRoads <span class="sc">%&gt;%</span></span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_join</span>( theFan <span class="sc">%&gt;%</span> <span class="fu">select</span>( Category ) ) <span class="ot">-&gt;</span> roadZones</span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb107-4"><a href="#cb107-4" aria-hidden="true" tabindex="-1"></a>roadZones <span class="sc">%&gt;%</span></span>
+<span id="cb107-5"><a href="#cb107-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb107-6"><a href="#cb107-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>( Category, <span class="at">sort =</span> <span class="cn">TRUE</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                          Category   n
+1                      Residential 972
+2         Multi Family Residential 387
+3  Single &amp; Two Family Residential 335
+4                         Business 244
+5        Single Family Residential 234
+6                   Urban Business 227
+7                 Light Industrial 141
+8  Transit-Oriented Nodal District 108
+9   Multi Family Urban Residential 102
+10                   Institutional  41
+11                Heavy Industrial  25
+12              Residential Office  24</code></pre>
+</div>
+</div>
+<p>A segment that crosses from one district into another touches both, so it shows up once for each.</p>
+<p>Finally, <code>st_intersection()</code> cuts one layer by another, keeping only the parts that overlap. Here it trims the road segments at the edge of the target district, so we can measure how much road is actually inside it.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a>fanRoads <span class="sc">%&gt;%</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_intersection</span>( <span class="fu">st_geometry</span>( target ) ) <span class="sc">%&gt;%</span></span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_length</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_units</span>( km )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: attribute variables are assumed to be spatially constant throughout
+all geometries</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>34.49645 [km]</code></pre>
+</div>
+</div>
+<p>(The warning is the same one we saw with <code>st_crop()</code>: the pieces that are kept inherit the attributes of the segment they were cut from.)</p>
+<p>Go check out the <code>sf</code> cheatsheet for more spatial joins and options.</p>
 </section>
+</section>
+<section id="land-cover" class="level2">
+<h2 class="anchored" data-anchor-id="land-cover">Land Cover</h2>
+<p>Back to the dogwoods. A natural question about the neighborhoods we built is: <em>what is in them?</em> The <a href="https://www.mrlc.gov/data">National Land Cover Database</a> (NLCD) classifies every 30 m × 30 m cell of the United States into one of 16 land cover classes (open water, four intensities of development, three kinds of forest, wetlands, agriculture, etc.). Data like this, a grid of cells each holding a value, are called a <em>raster</em>, and we will learn to work with them directly in a later topic.</p>
+<p>For now, we will treat that part as a black box. The function <code>get_landcover()</code> takes an <code>sf</code> object of polygons, finds the NLCD cells inside each one (using the 2021 NLCD for this study area), and returns the proportion of each polygon covered by each of seven broad categories: <code>Water</code>, <code>Developed</code>, <code>Barren</code>, <code>Forest</code>, <code>Shrub/Grass</code>, <code>Agriculture</code>, and <code>Wetland</code>. You can load it directly from its web address with <code>source()</code>, or download <a href="https://dyerlabteaching.github.io/Shapefiles/get_landcover.R">the file</a> into your project and <code>source( "get_landcover.R" )</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>( <span class="st">"https://dyerlabteaching.github.io/Shapefiles/get_landcover.R"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Let’s get the land cover for each tree’s neighborhood.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a>lc <span class="ot">&lt;-</span> <span class="fu">get_landcover</span>( nbhd )</span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>lc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 105 × 7
+   Mother   Habitat Tree       N Preliminary Category    Proportion
+   &lt;chr&gt;    &lt;chr&gt;   &lt;chr&gt;  &lt;dbl&gt; &lt;lgl&gt;       &lt;chr&gt;            &lt;dbl&gt;
+ 1 Cultivar Urban   102UWP    18 TRUE        Water           0     
+ 2 Cultivar Urban   102UWP    18 TRUE        Developed       0.903 
+ 3 Cultivar Urban   102UWP    18 TRUE        Barren          0     
+ 4 Cultivar Urban   102UWP    18 TRUE        Forest          0.0971
+ 5 Cultivar Urban   102UWP    18 TRUE        Shrub/Grass     0     
+ 6 Cultivar Urban   102UWP    18 TRUE        Agriculture     0     
+ 7 Cultivar Urban   102UWP    18 TRUE        Wetland         0     
+ 8 Cultivar Urban   103UWP    13 TRUE        Water           0     
+ 9 Cultivar Urban   103UWP    13 TRUE        Developed       1     
+10 Cultivar Urban   103UWP    13 TRUE        Barren          0     
+# ℹ 95 more rows</code></pre>
+</div>
+</div>
+<p>There is one row for each tree in each category (15 trees × 7 categories = 105 rows), and each row carries along the tree’s data. That makes it easy to summarize with normal <code>dplyr</code> routines. Here is the average proportion of each category, for each habitat.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>lc <span class="sc">%&gt;%</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>( Habitat, Category ) <span class="sc">%&gt;%</span></span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>( <span class="at">Proportion =</span> <span class="fu">mean</span>( Proportion ),</span>
+<span id="cb115-4"><a href="#cb115-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">.groups =</span> <span class="st">"drop"</span> ) <span class="ot">-&gt;</span> habitat_lc</span>
+<span id="cb115-5"><a href="#cb115-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-6"><a href="#cb115-6" aria-hidden="true" tabindex="-1"></a>habitat_lc <span class="sc">%&gt;%</span></span>
+<span id="cb115-7"><a href="#cb115-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>( <span class="at">names_from =</span> Habitat,</span>
+<span id="cb115-8"><a href="#cb115-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">values_from =</span> Proportion ) <span class="sc">%&gt;%</span></span>
+<span id="cb115-9"><a href="#cb115-9" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>( <span class="at">digits =</span> <span class="dv">3</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Category</th>
+<th style="text-align: right;">Native</th>
+<th style="text-align: right;">Suburban</th>
+<th style="text-align: right;">Urban</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Agriculture</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Barren</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Developed</td>
+<td style="text-align: right;">0.053</td>
+<td style="text-align: right;">0.739</td>
+<td style="text-align: right;">0.980</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Forest</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.085</td>
+<td style="text-align: right;">0.019</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Shrub/Grass</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Water</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Wetland</td>
+<td style="text-align: right;">0.133</td>
+<td style="text-align: right;">0.150</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Or graphically, as a bar chart.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( habitat_lc,</span>
+<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">aes</span>( Category, Proportion, <span class="at">fill =</span> Habitat ) ) <span class="sc">+</span></span>
+<span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>( <span class="at">position =</span> <span class="st">"dodge"</span> ) <span class="sc">+</span></span>
+<span id="cb116-4"><a href="#cb116-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb116-5"><a href="#cb116-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>( <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb116-6"><a href="#cb116-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">y =</span> <span class="st">"Average proportion of a 250 m neighborhood"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="narrative_files/figure-html/unnamed-chunk-65-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The habitats are clearly different. The <code>Urban</code> trees live in neighborhoods that are almost entirely developed, the <code>Native</code> trees in mostly forested ones, and the <code>Suburban</code> trees in between, with a bit more forest and wetland mixed in.</p>
+<p>The same function works on any polygons, not just buffers. Here is the land cover in the transect corridor compared with the habitat neighborhoods.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>corridor <span class="sc">%&gt;%</span></span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>( <span class="at">Habitat =</span> <span class="st">"Transect"</span> ) <span class="sc">%&gt;%</span></span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">get_landcover</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>( habitat_lc ) <span class="sc">%&gt;%</span></span>
+<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>( <span class="at">names_from =</span> Habitat,</span>
+<span id="cb117-6"><a href="#cb117-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">values_from =</span> Proportion ) <span class="sc">%&gt;%</span></span>
+<span id="cb117-7"><a href="#cb117-7" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>( <span class="at">digits =</span> <span class="dv">3</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Category</th>
+<th style="text-align: right;">Transect</th>
+<th style="text-align: right;">Native</th>
+<th style="text-align: right;">Suburban</th>
+<th style="text-align: right;">Urban</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Water</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Developed</td>
+<td style="text-align: right;">0.575</td>
+<td style="text-align: right;">0.053</td>
+<td style="text-align: right;">0.739</td>
+<td style="text-align: right;">0.980</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Barren</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Forest</td>
+<td style="text-align: right;">0.282</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.085</td>
+<td style="text-align: right;">0.019</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Shrub/Grass</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.008</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Agriculture</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Wetland</td>
+<td style="text-align: right;">0.120</td>
+<td style="text-align: right;">0.133</td>
+<td style="text-align: right;">0.150</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>A single straight transect averages over everything between its endpoints, so it does not look like any of the places the trees actually are.</p>
 </section>
 
 
