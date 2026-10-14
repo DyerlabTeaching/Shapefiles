@@ -13,29 +13,218 @@ format: dyerlab-narrative-html
 
 ```{r}
 #| echo: false
-#| eval: true
+#| message: false
+#| warning: false
 library( sf )
-library( ggplot2 )
 library( tidyverse )
-ggplot2::theme_set( theme_minimal( base_size=16) )
+theme_set( theme_minimal( base_size = 16 ) )
 ```
 
-In this topic, we will focus on lines and polygons.  These are represented as `sf` objects, we can leverage a large amount of `st_*` functions to perform manipulations, and we can visualize them using either built-in routines or via `ggplot` (as expected).
+In the [points](https://dyerlabteaching.github.io/Spatial-Points/narrative.html) topic, every row of an `sf` object was a single coordinate.  Here we connect those coordinates into more complicated *vector* types: lines (`LINESTRING`) and polygons (`POLYGON` and `MULTIPOLYGON`).  They are still `sf` objects, so the same `st_*` functions and the same plotting routines (both built-in `plot()` and `ggplot()` with `geom_sf()`) work on them.
 
-## Raw Data
+We will:
 
-The data for this are going to be represented by roads and development zones in Richmond, Virginia.  These data are made available by the GIS Department of the City of Richmond. For this example, we will be loading these in as *shapefiles*.
+- Build `LINESTRING` and `POLYGON` objects *de novo* from a `data.frame` of coordinates.
+- Make polygons from the map data that comes with `ggplot2`.
+- Import real vector data from ESRI shapefiles.
+- Use spatial joins to select features by *where* they are instead of by a key column.
 
-You can load in shapefile data directly into R but we have to do a little work.  First, we should understand that *a shapefile* is not an actual file, it is a collection of several files.  They are often zipped up into a single archive.  
+## Lines
 
-Here are the two shapefile archives we will use, from the [course data repository](https://dyerlabteaching.github.io/CourseData/).
+### Lines *de novo*
+
+A line is just a sequence of points, connected in the order given.  So let's start with some points.  Here I make 10 random locations in central Virginia, five belonging to `Rodney` and five to `Sarah`, each with a bit of `Data` attached.
+
+```{r}
+set.seed( 543 )
+df <- data.frame( id = c( rep("Rodney", 5), rep("Sarah", 5) ),
+                  Data = rnorm( 10, 42, 42 ),
+                  Longitude = rnorm( 10, -78, 1 ),
+                  Latitude = rnorm( 10, 37, 1 ) )
+df
+```
+
+Just as before, we turn these into `POINT` objects with `st_as_sf()`, telling it which columns hold the coordinates and what coordinate reference system (CRS) they are in (EPSG 4326 is plain longitude/latitude).
+
+```{r}
+df %>%
+  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) -> pts
+pts
+```
+
+```{r}
+ggplot( pts ) +
+  geom_sf( aes( color = id, size = Data ) ) +
+  coord_sf()
+```
+
+To make lines, we need to collapse each person's five points into a single row.  We `group_by()` the `id`, `summarize()` the `Data` column (here by its mean), which leaves a `MULTIPOINT` geometry for each group, and then `st_cast()` that collection into a `LINESTRING`.
+
+```{r}
+df %>%
+  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) %>%
+  group_by( id ) %>%
+  summarize( Data = mean( Data ) ) %>%
+  st_cast( "LINESTRING" ) -> lines
+lines
+```
+
+### Visualizing Lines
+
+Just like points, we can plot these with the built-in `plot()` function, here selecting the `Data` column to plot,
+
+```{r}
+plot( lines["Data"], lwd = 2 )
+```
+
+or with `ggplot()`.
+
+```{r}
+ggplot( lines ) +
+  geom_sf( aes( color = id ), linewidth = 2 ) +
+  coord_sf()
+```
+
+### Operations on Lines
+
+Because the geometry is spatially aware, we can ask spatial questions of it.  The physical length of each `LINESTRING` (in meters, since `sf` computes distances on the globe for lat/lon data):
+
+```{r}
+st_length( lines )
+```
+
+The bounding box surrounding all the lines:
+
+```{r}
+st_bbox( lines )
+```
+
+And the area of the convex hull that encloses *all* the lines.  Here I `st_union()` the two lines into one geometry, wrap a hull around it, measure its area, and use the `units` library to express it in square kilometers.
+
+```{r}
+library( units )
+lines %>%
+  st_union() %>%
+  st_convex_hull() %>%
+  st_area() %>%
+  set_units( km^2 )
+```
+
+### Textual Versions of Geometry
+
+Every geometry can also be written as *Well Known Text* (WKT), a plain-text description of the shape and its coordinates.  This is handy when you want to see exactly what a geometry contains.
+
+```{r}
+lines$geometry[1] %>% st_as_text()
+```
+
+## Polygons
+
+A polygon is simply a line whose first and last coordinates are exactly the same, so it closes upon itself.  To see this, here are our points again with the first point of each person repeated at the end of their sequence.
+
+```{r}
+df.p <- df[ c( 1:5, 1, 6:10, 6 ), ]
+df.p
+```
+
+### Polygons *de novo*
+
+We make polygons the same way we made lines, just casting to `POLYGON` instead.  `st_cast()` closes each ring for us by repeating the first point.
+
+```{r}
+df %>%
+  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) %>%
+  group_by( id ) %>%
+  summarize( Data = mean( Data ) ) %>%
+  st_cast( "POLYGON" ) -> polygons
+polygons
+```
+
+```{r}
+ggplot( polygons ) +
+  geom_sf( aes( fill = Data ), alpha = 0.75 ) +
+  coord_sf()
+```
+
+Since the points are random, the order they are connected in is random too, so these polygons may cross over themselves.  Real polygons are made from points that go around the outside of a shape in order.
+
+### Polygons from Data Frames
+
+For real shapes, we can grab polygon data from `ggplot` itself.  The `map_data()` function (it uses the `maps` library) returns a `data.frame` of coordinates.  Here are the counties of Virginia.
+
+```{r}
+library( maps )
+map_data( "county", "virginia" ) %>%
+  select( Longitude = long,
+          Latitude = lat,
+          group,
+          County = subregion ) -> va_counties
+head( va_counties )
+```
+
+To get an idea of what these data represent, let's first plot just the points.  This shows where all the coordinates are, without the connecting lines.
+
+```{r}
+ggplot( va_counties, aes( Longitude, Latitude ) ) +
+  geom_point( size = 0.25 ) +
+  coord_quickmap()
+```
+
+Each county is identified by its `group`.  If we look at a couple of counties, it is easier to see how the polygons are constructed: the points (in color) are connected in order to make the outline (the shaded polygon).
+
+```{r}
+va_counties %>%
+  filter( County %in% c("hanover", "henrico") ) %>%
+  ggplot( aes( Longitude, Latitude ) ) +
+  geom_polygon( aes( fill = County ), alpha = 0.1 ) +
+  geom_point( aes( color = County ) ) +
+  coord_quickmap()
+```
+
+Notice that the points on the shared border are repeated in both `County == "hanover"` and `County == "henrico"`.  Each polygon is complete on its own.
+
+Using `geom_polygon()` with `group = group` draws them all.
+
+```{r}
+ggplot( va_counties, aes( Longitude, Latitude ) ) +
+  geom_polygon( aes( group = group ),
+                fill = "grey80",
+                color = "black",
+                linewidth = 0.25 ) +
+  coord_quickmap()
+```
+
+We can also layer `sf` objects on top of these.  Here are the lines we made earlier on top of the counties.  Notice that we use `coord_sf()` here, since we are now mixing in an `sf` layer.
+
+```{r}
+ggplot() +
+  geom_polygon( aes( Longitude, Latitude, group = group ),
+                fill = "grey80",
+                color = "black",
+                linewidth = 0.25,
+                data = va_counties ) +
+  geom_sf( aes( color = Data ),
+           linewidth = 2,
+           data = lines ) +
+  coord_sf()
+```
+
+## Shapefiles
+
+Most of the time we are not going to make vector data by hand; we will load it from a file someone else created.  A very common format for this is the ESRI *shapefile*, which can hold `POINT`, `LINESTRING`, `POLYGON` and other vector types.
+
+The first thing to understand is that *a shapefile* is not an actual file.  It is a collection of several files with the same name and different extensions, and they are usually zipped up into a single archive.
+
+### Downloading the Archives
+
+For this topic we will use roads and zoning districts for Richmond, Virginia, made available by the GIS Department of the City of Richmond.  Here are the two archives in the [course data repository](https://dyerlabteaching.github.io/CourseData/).
 
 ```{r}
 roads_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"
 district_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"
 ```
 
-We can use `R` to download them (n.b., you can do it using a browser as well).  The `destfile` argument says where to save each archive.  Here I put them in a temporary folder (`tempdir()`) so the raw files do not clutter up the project, but on your own computer you will usually save them into a `data` folder in your project (e.g., `destfile = "data/Roads.zip"`) so you only have to download them once.
+You can download them with your browser and move them into your project folder, or you can have `R` download them.  The `destfile` argument says where to save each archive.  Here I put them in a temporary folder (`tempdir()`) so the raw files do not clutter up the project, but on your own computer you will usually save them into a `data` folder in your project (e.g., `destfile = "data/Roads.zip"`) so you only have to download them once.
 
 ```{r}
 shp_dir <- tempdir()
@@ -43,302 +232,287 @@ download.file( roads_url, destfile = file.path( shp_dir, "Roads.zip" ) )
 download.file( district_url, destfile = file.path( shp_dir, "Districts.zip" ) )
 ```
 
-Before we can use them, we need to unzip them.  The `exdir` argument tells `unzip()` where to put the expanded files.
+### Unzipping
+
+Before we can use them, we need to unzip them.  You can do this in your computer's file browser, or have `R` do it.  The `exdir` argument tells `unzip()` where to put the expanded files.
 
 ```{r}
 unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
 unzip( file.path( shp_dir, "Districts.zip" ), exdir = shp_dir )
 ```
 
-Depending upon how the archives were created, they may make a sub directory or just a pile of files in the same directory.  For this example, there is one of each: the *Zoning_Districts.* set of files is expanded directly into the folder and the *Roads* are expanded into a subfolder named *Centerlines-shp*.
+Depending upon how the archives were created, they may expand into a subfolder or just put a pile of files in the same folder.  For this example, there is one of each: the `Zoning_Districts.*` files are expanded directly into the folder and the roads are expanded into a subfolder named `Centerlines-shp`.
+
+![The expanded shapefile components: five `Zoning_Districts` files and the `Centerlines-shp` folder.](media/flickr_50540213032.jpg){fig-alt="A file listing showing Zoning_Districts.cpg, .dbf, .prj, .shp, and .shx files, and a folder named Centerlines-shp."}
 
 ```{r}
 list.files( shp_dir, recursive = TRUE, pattern = "Zoning|tran_" )
 ```
 
+### File Components
 
-## Lines
+Each of these files holds one part of the data set:
 
-We've covered [points](https://dyerlabteaching.github.io/Spatial-Points/slides.html#/title-slide) and now if we put them together in a sequence, we get lines.  They are taken in the order given, just like when we were plotting polygons using `geom_polygon()`.  Instead of loading these in manually, I'm going to load in the shapefile with the roads.  To load in shapefiles, we use the `st_read()` function and pass it the .shp file.
+- `.shp` holds the geometry (the coordinates of each feature).
+- `.shx` is an index into the geometry, so features can be found quickly.
+- `.dbf` holds the attribute table (the non-spatial columns for each feature).
+- `.prj` holds the projection, the coordinate reference system the coordinates are in.
+- `.cpg` gives the character encoding used in the `.dbf` file.
 
-```{r}
-roads <- st_read( file.path( shp_dir, "Centerlines-shp/tran_Carriageway.shp" ) )
-names( roads )
-```
+The `.prj` file is plain text.  If you open it, you will see the full definition of the projection.
 
-We can clean it up a bit by removing the extraneous columns.
+![The contents of `Zoning_Districts.prj`, describing the NAD83 Virginia South (US feet) projection.](media/flickr_50540256782.jpg){fig-alt="A text editor showing the Zoning_Districts.prj file, which defines the NAD83 Virginia South ftUS projection using a Lambert Conformal Conic projection with units of US feet."}
 
-```{r}
-roads %>%
-  select(-CreatedBy,
-         -CreatedDat,
-         -EditBy,
-         -EditDate) %>%
-  select( FIPS, AssetID, StreetType, Functional, FullName, OneWay, geometry ) -> roads
-roads
-```
+### Loading a Shapefile
 
-You can see that the `geometry` object is a `LINESTRING` (in `sf` terms).  We can see the coordinates for one of these (say *Dwyer St*), by converting the `geometry` object to a Well Known Text (WKT) version representing the sequence of points.
-
-For any particular street, say *Three Chopt Road* in Richmond, we can filter out the rows of this for each `LINESTRING` object. 
-
-```{r}
-roads %>% 
-  filter( FullName == "Three Chopt Road") -> three_chopt
-three_chopt
-```
-
-This one has `r nrow( three_chopt)` elements, each of which is created by a sequence of points.  We can loop through them and print out the coordinates in textual format as:
-
-```{r}
-for( i in 1:nrow(three_chopt) ) {
-  geo <- three_chopt$geometry[i]
-  cat( i, st_as_text( geo ), "\n") 
-}
-```
-
-We can then plot this using the built-in plot commands as:
-
-```{r}
-plot( three_chopt["StreetType"] )
-```
-
-Or using `ggplot` as:
-
-```{r}
-ggplot( three_chopt ) + 
-  geom_sf() + 
-  coord_sf()
-```
-
-## Polygons
-
-Polygons are simply lines whose first and last point are the same (e.g., they close upon themselves).  We can create these *de novo*.
-
-### Polygons from Data Frames
-
-As a first approximation, we can grab polygon data from `ggplot` itself.  Here I pull in the `data.frame` representing the counties of Virginia.
-
-```{r}
-library( maps )
-map_data( "county", "virginia") %>%
-  select( Longitude = long,
-          Latitude = lat,
-          group,
-          County = subregion) -> va_counties
-head( va_counties )
-```
-To get an idea of what these data represent visually, let's first plot it as a `geom_point()` object.  This will show you where all the coordinates are located (just not the connecting lines).
-
-
-```{r}
-ggplot( va_counties, aes( Longitude, Latitude) ) + 
-  geom_point( size=0.25 ) + 
-  coord_quickmap()
-```
-
-
-```{r}
-ggplot( va_counties, aes( Longitude, Latitude) ) + 
-  geom_polygon( aes( group=group ),
-                fill="grey80",
-                color = "black", 
-                size = 0.25) + 
-  coord_quickmap()
-```
-
-What is hidden here is the complexity of the points themselves.  Each county is identified by a `group` in the `data.frame`.
-
-
-If we look at a particular county, it may be a bit more informative on how these things are constructed.  Here are the points (in red) and the underlying connecting lines creating the polygon (in grey).  
-
-```{r}
-va_counties %>%
-  filter( County %in%  c("hanover","henrico") ) %>%
-  ggplot( aes(Longitude, Latitude) ) + 
-  geom_polygon( aes( fill = County), alpha=0.1 ) +
-  geom_point( aes( color = County) ) +
-  coord_quickmap()
-```
-
-Notice that the points on the border are repeated in both `County == "hanover"` and `County == "henrico"`.
-
-### Polygons from Shapefiles
-
-We can also load these in from shapefiles.  In the Richmond GIS data, we have Zoning District data, which we unzipped above.  In this case, the archive simply expanded into a set of files named `Zoning_Districts.*`.
-
-```{r}
-list.files( shp_dir, pattern = "^Zoning_Districts" )
-```
-
-To load it in, we read the shapefile (.shp) from that folder.
+To load a shapefile, we use `st_read()` and pass it the path to the `.shp` file.  It finds the other component files on its own.
 
 ```{r}
 districts <- st_read( file.path( shp_dir, "Zoning_Districts.shp" ) )
-class( districts )
 ```
 
-This has a lot of columns of information.
+The result is an `sf` object.  The attributes from the `.dbf` file are put into the `data.frame` and the `geometry` column is built from the `.shp` file.  Each row here is a `MULTIPOLYGON`.
+
+```{r}
+class( districts )
+head( districts, n = 2 )
+```
+
+Notice the projection: `NAD83 / Virginia South (ftUS)`.  If you look it up on [epsg.io](https://epsg.io/2284), it is EPSG 2284, and its units are US feet, not degrees.
+
+### Simplifying the Data
+
+There are a lot of columns here, many of which are bookkeeping from the GIS department.
 
 ```{r}
 names( districts )
 ```
 
+Let's drop the ones we do not need.  `Shape__Are` and `Shape__Len` are the area and perimeter of each polygon, which we can always recalculate with `st_area()` and `st_perimeter()`.
 
 ```{r}
-summary( districts )
+districts %>%
+  select( -Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate ) %>%
+  select( -Shape__Are, -Shape__Len ) -> districts
+head( districts, n = 1 )
 ```
 
-More importantly, we can look at the raw data and see the other meta data.
+The `Name` column holds the zoning code for each district.
 
 ```{r}
-head(districts, n=2)
+districts$Name %>% unique() %>% sort()
 ```
 
+### Visualizing
 
-The whole thing looks like this (I'll use the area of each polygon as the fill color).
+We can plot it normally using `plot()` for `sf` objects, coloring by zoning code,
 
 ```{r}
-plot( districts["Shape__Are"], axes=TRUE )
+plot( districts["Name"] )
 ```
-Notice it is in `CRS = NAD83/Virginia South (ftUS)`, which if we look at [epsg.io](http://epsg.io/32147) and search for it relates to EPSG=32147.  Let's do some pre-processing[^1]:  
-- Put it in Lat/Lon for simplicity  
-- Drop some of the unnecessary columns of data in the shapefile. 
-- Crop to the VCU/Fan area (I went to google earth and found the bounding box and then just added it here so I had to make it lat/lon then crop then change it back).
+
+and we can overlay one district on top of all of them by plotting just the geometry (`st_geometry()`) and then adding a second layer with `add = TRUE`.
 
 ```{r}
-districts %>% 
-  select( OBJECTID, 
-          Name, 
-          GlobalID, 
-          Area = Shape__Are,
-          geometry) -> districts
-head( districts )
+plot( st_geometry( districts ) )
+plot( st_geometry( districts[ districts$OBJECTID == 530, ] ),
+      col = "red",
+      add = TRUE )
 ```
 
+## Vector Operations
 
-And we can plot it normally using `plot()` for `sf` objects.  Each row is a `MULTIPOLYGON` object.
+In the [Joins](https://dyerlabteaching.github.io/Joins/narrative.html) topic, we used primary and foreign keys to join `data.frame` objects together.  With spatial data, we can also combine data sets using their *positions*: which features intersect, touch, contain, or are within some distance of each other.  These are called *spatial joins*, and there are a lot of them.  Check out the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) for the full list.
+
+### A Second Data Set
+
+Let's load in the roads.  This shapefile was in the `Centerlines-shp` subfolder.
+
+```{r}
+road.shapefile <- st_read( file.path( shp_dir, "Centerlines-shp/tran_Carriageway.shp" ) )
+names( road.shapefile )
+```
+
+Each of the `r nrow( road.shapefile )` rows is a `LINESTRING` representing one segment of road.
+
+### Check Projections
+
+Before combining two spatial data sets, you must make sure they are in the same projection[^1].
+
+```{r}
+st_crs( road.shapefile ) == st_crs( districts )
+```
+
+These are both from the same GIS department, so they match.  If they differed, we would reproject one to match the other with `st_transform()`.
+
+```{r}
+#| eval: false
+road.shapefile %>%
+  st_transform( crs = st_crs( districts ) ) -> road.shapefile
+```
+
+### Data Cleanup
+
+Let's keep only the columns we need, rename a couple of the abbreviated ones, and make the categorical columns into factors.
+
+```{r}
+road.shapefile %>%
+  select( FullName, OneWay, StreetType,
+          SpeedLimit = PostedSpee,
+          Length = SHAPE_Leng,
+          geometry ) %>%
+  mutate( OneWay = factor( OneWay ),
+          StreetType = factor( StreetType ) ) -> roads
+summary( roads )
+```
+
+### Filtering and Plotting Lines
+
+Since `roads` is a `data.frame`, we can use normal `dplyr` routines on it.  Here I grab just the highways, interchanges, and ramps,
+
+```{r}
+roads %>%
+  filter( StreetType %in% c("Highway",
+                            "Highway Interchange",
+                            "Ramp") ) -> highways
+summary( highways )
+```
+
+and plot them colored by speed limit.
+
+```{r}
+plot( highways["SpeedLimit"], lwd = 4 )
+```
+
+For any particular street, say *Three Chopt Road*, we can filter out the rows for it.
+
+```{r}
+roads %>%
+  filter( FullName == "Three Chopt Road" ) -> three_chopt
+nrow( three_chopt )
+```
+
+The road is made of `r nrow( three_chopt )` separate `LINESTRING` segments.  Each one is a sequence of points, which we can see as text,
+
+```{r}
+three_chopt$geometry[1] %>% st_as_text()
+```
+
+or plot all of them together.
+
+```{r}
+ggplot( three_chopt ) +
+  geom_sf( aes( color = SpeedLimit ), linewidth = 2 ) +
+  coord_sf()
+```
+
+### Cropping to The Fan
+
+Let's focus on the area around VCU and *The Fan*.  The large residential district in the middle of the Fan is `OBJECTID == 368`.  To get a region around it, I buffer that polygon by 1500 feet (the units of this projection), take the bounding box of the result, and then crop all the districts to that box.
 
 ```{r}
 districts %>%
   filter( OBJECTID == 368 ) %>%
-  st_buffer(dist = 1500) %>%
+  st_buffer( dist = 1500 ) %>%
   st_bbox() -> fan_bbox
+
 districts %>%
-  st_crop( fan_bbox ) -> theFan 
+  st_crop( fan_bbox ) -> theFan
 plot( theFan["Name"] )
 ```
-Or as a `ggplot()` object (notice how it converts to lat/lon when plotting),
+
+`st_crop()` will warn you that it assumes the attributes are the same across each geometry.  That just means that when it cuts a district in half at the edge of the box, the half it keeps gets all the original attributes, which is what we want.
+
+### Adding Auxiliary Data
+
+The zoning codes are not very descriptive.  There is a csv file with a translation in the course data repository, and we can `left_join()` it to `theFan` by the `Name` column as it is read in[^2].
 
 ```{r}
-ggplot( theFan ) + 
-  geom_sf( aes( fill=Name ) ) + 
-  coord_sf() 
-```
+zone_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"
 
-
-Let's go grab a key to those zoning types.  There is a csv file with a translation in the course data repository.  Here I `left_join()` with that file as I read it in[^2].
-
-```{r}
 theFan %>%
-  left_join( read_csv( "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv" ),
-             by="Name") %>%
-  mutate( Category = factor( Category) ) %>%
-  select( OBJECTID, 
-          Name, 
-          Category, 
-          everything() )  -> theFan
+  left_join( read_csv( zone_url ),
+             by = "Name" ) %>%
+  mutate( Category = factor( Category ) ) %>%
+  select( OBJECTID,
+          Name,
+          Category,
+          everything() ) -> theFan
 ```
-
 
 ```{r}
 ggplot( theFan ) +
-  geom_sf( aes( fill=Category)) +
-  scale_fill_brewer( type="qual", 
-                     palette = "Set3")
+  geom_sf( aes( fill = Category ) ) +
+  scale_fill_brewer( type = "qual",
+                     palette = "Set3" )
 ```
 
+Notice that `geom_sf()` draws the axes in longitude and latitude, even though the data are in feet.  It converts the coordinates for display without changing the data.
 
-## Operations
+### Cropping the Roads
 
-So we will close this out by looking at a few different operations that we can use for polygons.  First, I'm going to load in the road shapefile (that was named by some random sequence of letters) and reproject it.
+We can crop the roads to the same box.
 
 ```{r}
-head( roads, n=3)
+roads %>%
+  st_crop( st_bbox( theFan ) ) -> fanRoads
+plot( st_geometry( theFan ), lwd = 2 )
+plot( st_geometry( fanRoads ), col = "blue", add = TRUE )
 ```
 
-```{r}
-plot( theFan$geometry, lwd=2 )
-fanRoads <- st_crop( roads, st_bbox( theFan ))
-plot( fanRoads$geometry, col="blue", cex=0.5, add=TRUE )
-```
+### Selecting a Single Zone
 
-Let's isolate one of the main polygons in `theFan` data set.  The target one below is indicated by `OBJECTID=368`.
+Let's mark the target district in `theFan` with a new column, and plot it with each district's `OBJECTID` as a label so we can see which one it is.
 
 ```{r}
 theFan %>%
-  mutate( Target = ifelse( OBJECTID == 368, 
-                           TRUE, 
-                           FALSE) ) -> theFan
+  mutate( Target = OBJECTID == 368 ) -> theFan
+
 theFan %>%
-  ggplot() + 
-  geom_sf( aes(fill=Target) ) + 
-  geom_sf_text( aes(label=OBJECTID), size=3 ) +
-  coord_sf() 
-```
-
-## Spatial Joins
-
-```{r}
-names( theFan )
-names( fanRoads )
-```
-
-<mark>We can use *spatial joins* to select features either directly.</mark>  Here I'll use the target polygon in `theFan`.
-
-```{r}
-target <- theFan[ theFan$OBJECTID == 368, ]
-target
-```
-
-And then add an attribute to the `data.frame` if each multipolygon `intersects` that polygon.
-
-```{r}
-fanRoads %>%
-  mutate( OnTarget = st_intersects( fanRoads,
-                                    target, 
-                                    sparse = FALSE ) ) -> fanRoads
-summary( fanRoads$OnTarget )
-```
-
-
-We can get the names of these roads using normal `dplyr` routines,
-
-```{r}
-fanRoads %>%
-  filter( st_intersects( fanRoads,
-                         target, 
-                         sparse = FALSE ) == TRUE ) %>%
-  as_data_frame() %>%
-  select( `Street Name` = FullName ) %>%
-  arrange( `Street Name`) %>%
-  unique() 
-```
-
-And we can plot them as:
-
-```{r}
-fanRoads %>%
-  filter( OnTarget==TRUE ) %>%
   ggplot() +
-  geom_sf( aes( fill = Target ), data=theFan ) +
-  geom_sf( color="green" ) + 
-  scale_fill_manual( values=c("grey90","dodgerblue3"))
+  geom_sf( aes( fill = Target ) ) +
+  geom_sf_text( aes( label = OBJECTID ), size = 3 ) +
+  coord_sf()
 ```
 
-Go check out the `sf` cheatsheet for more geospatial joins and options.
+And then pull it out as its own `sf` object.
 
+```{r}
+target <- theFan %>% filter( OBJECTID == 368 )
+plot( st_geometry( target ) )
+```
+
+### Spatial Joins
+
+Now for the question we have been building toward: *which roads cross this district?*  The `st_filter()` function keeps the rows of one `sf` object that satisfy a spatial relationship with another.  By default, that relationship is `st_intersects()`, meaning they share at least one point.
+
+```{r}
+fanRoads %>%
+  st_filter( target ) -> targetRoads
+nrow( targetRoads )
+```
+
+Those are `r nrow( targetRoads )` road segments.  To get the street names, we drop the geometry with `st_drop_geometry()` (otherwise the `geometry` column comes along for the ride) and use normal `dplyr` routines.
+
+```{r}
+targetRoads %>%
+  st_drop_geometry() %>%
+  select( `Street Name` = FullName ) %>%
+  distinct() %>%
+  arrange( `Street Name` )
+```
+
+And we can plot them on top of the districts, with the target highlighted.
+
+```{r}
+ggplot() +
+  geom_sf( aes( fill = Target ), data = theFan ) +
+  geom_sf( color = "darkgreen", data = targetRoads ) +
+  scale_fill_manual( values = c("grey90", "dodgerblue3") )
+```
+
+To use a different relationship, pass it as the `.predicate`.  For example, `st_filter( fanRoads, target, .predicate = st_within )` would keep only the road segments that lie *completely* inside the district.  Go check out the `sf` cheatsheet for more spatial joins and options.
 
 [^1]: **Dyer's First Law**: Reproject then forget about it!
 
-[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlabteaching.github.io/Joins/narrative.html)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object. 
+[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlabteaching.github.io/Joins/narrative.html)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object.

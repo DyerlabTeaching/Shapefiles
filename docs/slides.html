@@ -213,7 +213,7 @@ Rodney Dyer, PhD
 <p>This section covers the following topics:</p>
 <ul>
 <li><p>Creation of <code>sf::LINESTRING</code> and <code>sf::MULTIPOLYGON</code> objects from raw data.</p></li>
-<li><p>Loading map polygons from <code>get_data()</code></p></li>
+<li><p>Loading map polygons from <code>map_data()</code></p></li>
 <li><p>Importing data from ESRI shapefile.</p></li>
 <li><p>Implementing Spatial Joins.</p></li>
 </ul>
@@ -227,29 +227,30 @@ Rodney Dyer, PhD
 <h2>Data Sources: <em>De novo</em> Creation</h2>
 <p>It is possible to make data from scratch by entering coordinates directly.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>( <span class="at">id =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"Rodney"</span>,<span class="dv">5</span>), <span class="fu">rep</span>(<span class="st">"Sarah"</span>,<span class="dv">5</span>)),</span>
-<span id="cb1-2"><a href=""></a>                  <span class="at">Data =</span> <span class="fu">rnorm</span>( <span class="dv">10</span>, <span class="dv">42</span>, <span class="dv">42</span>),</span>
-<span id="cb1-3"><a href=""></a>                  <span class="at">Longitude =</span> <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="sc">-</span><span class="dv">78</span>, <span class="dv">1</span> ),</span>
-<span id="cb1-4"><a href=""></a>                  <span class="at">Latitude =</span> <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">37</span>, <span class="dv">1</span>) )</span>
-<span id="cb1-5"><a href=""></a>df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="fu">set.seed</span>( <span class="dv">543</span> )</span>
+<span id="cb1-2"><a href=""></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>( <span class="at">id =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"Rodney"</span>,<span class="dv">5</span>), <span class="fu">rep</span>(<span class="st">"Sarah"</span>,<span class="dv">5</span>)),</span>
+<span id="cb1-3"><a href=""></a>                  <span class="at">Data =</span> <span class="fu">rnorm</span>( <span class="dv">10</span>, <span class="dv">42</span>, <span class="dv">42</span>),</span>
+<span id="cb1-4"><a href=""></a>                  <span class="at">Longitude =</span> <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="sc">-</span><span class="dv">78</span>, <span class="dv">1</span> ),</span>
+<span id="cb1-5"><a href=""></a>                  <span class="at">Latitude =</span> <span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">37</span>, <span class="dv">1</span>) )</span>
+<span id="cb1-6"><a href=""></a>df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       id      Data Longitude Latitude
-1  Rodney  34.76819 -77.71787 35.02370
-2  Rodney  38.24206 -77.92786 37.31192
-3  Rodney  67.64590 -79.38152 36.82536
-4  Rodney 114.35588 -79.15871 37.54399
-5  Rodney  47.82405 -77.90468 36.65865
-6   Sarah -34.79557 -80.58818 35.51979
-7   Sarah -21.35334 -77.42562 37.96118
-8   Sarah  63.50623 -78.25328 36.61868
-9   Sarah  56.15486 -79.91531 37.14066
-10  Sarah  29.78707 -79.47303 36.70159</code></pre>
+<pre><code>       id       Data Longitude Latitude
+1  Rodney  98.759269 -78.48553 35.66016
+2  Rodney  49.790138 -78.77618 35.55627
+3  Rodney  60.124115 -78.19129 37.35197
+4  Rodney  33.994487 -77.69823 37.11616
+5  Rodney   1.194861 -77.94678 38.75742
+6   Sarah  74.258820 -77.90507 36.81489
+7   Sarah  34.504144 -78.22234 38.30332
+8   Sarah  41.818465 -77.80990 35.94615
+9   Sarah 111.708637 -77.69536 36.26706
+10  Sarah  14.447750 -78.98146 38.77788</code></pre>
 </div>
 </div>
 </section>
 <section id="data-sources-de-novo-creation-1" class="slide level2 scrollable">
 <h2>Data Sources: <em>De novo</em> Creation</h2>
-<p>To Make to <code>sf</code> as <code>POINT</code> objects as normal.</p>
+<p>To make them into <code>sf</code> <code>POINT</code> objects, use <code>st_as_sf()</code> as normal.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a>df <span class="sc">%&gt;%</span></span>
 <span id="cb3-2"><a href=""></a>  <span class="fu">st_as_sf</span>( <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"Longitude"</span>, <span class="st">"Latitude"</span>), <span class="at">crs=</span><span class="dv">4326</span> ) <span class="ot">-&gt;</span> pts</span>
@@ -258,19 +259,19 @@ Rodney Dyer, PhD
 <pre><code>Simple feature collection with 10 features and 2 fields
 Geometry type: POINT
 Dimension:     XY
-Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
+Bounding box:  xmin: -78.98146 ymin: 35.55627 xmax: -77.69536 ymax: 38.77788
 Geodetic CRS:  WGS 84
-       id      Data                   geometry
-1  Rodney  34.76819  POINT (-77.71787 35.0237)
-2  Rodney  38.24206 POINT (-77.92786 37.31192)
-3  Rodney  67.64590 POINT (-79.38152 36.82536)
-4  Rodney 114.35588 POINT (-79.15871 37.54399)
-5  Rodney  47.82405 POINT (-77.90468 36.65865)
-6   Sarah -34.79557 POINT (-80.58818 35.51979)
-7   Sarah -21.35334 POINT (-77.42562 37.96118)
-8   Sarah  63.50623 POINT (-78.25328 36.61868)
-9   Sarah  56.15486 POINT (-79.91531 37.14066)
-10  Sarah  29.78707 POINT (-79.47303 36.70159)</code></pre>
+       id       Data                   geometry
+1  Rodney  98.759269 POINT (-78.48553 35.66016)
+2  Rodney  49.790138 POINT (-78.77618 35.55627)
+3  Rodney  60.124115 POINT (-78.19129 37.35197)
+4  Rodney  33.994487 POINT (-77.69823 37.11616)
+5  Rodney   1.194861 POINT (-77.94678 38.75742)
+6   Sarah  74.258820 POINT (-77.90507 36.81489)
+7   Sarah  34.504144 POINT (-78.22234 38.30332)
+8   Sarah  41.818465  POINT (-77.8099 35.94615)
+9   Sarah 111.708637 POINT (-77.69536 36.26706)
+10  Sarah  14.447750 POINT (-78.98146 38.77788)</code></pre>
 </div>
 </div>
 </section>
@@ -278,7 +279,7 @@ Geodetic CRS:  WGS 84
 <h2>Plotting Points</h2>
 <div class="columns">
 <div class="column" style="width:40%;">
-<p>We can easily mix individual aesthetic properties to change the representaion of the points provided by using <code>geom_sf()</code>.</p>
+<p>We can easily mix individual aesthetic properties to change the representation of the points provided by using <code>geom_sf()</code>.</p>
 <p>&nbsp;</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">ggplot</span>( pts ) <span class="sc">+</span> </span>
@@ -321,13 +322,13 @@ Geodetic CRS:  WGS 84
 <pre><code>Simple feature collection with 2 features and 2 fields
 Geometry type: LINESTRING
 Dimension:     XY
-Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
+Bounding box:  xmin: -78.98146 ymin: 35.55627 xmax: -77.69536 ymax: 38.77788
 Geodetic CRS:  WGS 84
 # A tibble: 2 × 3
   id      Data                                                          geometry
   &lt;chr&gt;  &lt;dbl&gt;                                                  &lt;LINESTRING [°]&gt;
-1 Rodney  60.6 (-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77.…
-2 Sarah   18.7 (-79.91531 37.14066, -79.47303 36.70159, -80.58818 35.51979, -78…</code></pre>
+1 Rodney  48.8 (-78.48553 35.66016, -78.77618 35.55627, -77.69823 37.11616, -78…
+2 Sarah   55.3 (-77.69536 36.26706, -77.8099 35.94615, -77.90507 36.81489, -78.…</code></pre>
 </div>
 </div>
 </section>
@@ -335,7 +336,7 @@ Geodetic CRS:  WGS 84
 <h2>Visualizing Line Objects</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
-<p>Just like when we were working with <code>POINT</code> objects, we can use both built-in graphing approaches as well as <code>ggplot()</code> for visualizing. Here I’m goint to plot the two line objects using normal graphics.</p>
+<p>Just like when we were working with <code>POINT</code> objects, we can use both built-in graphing approaches as well as <code>ggplot()</code> for visualizing. Here I’m going to plot the two line objects using normal graphics.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a><span class="fu">plot</span>( lines[<span class="st">"Data"</span>], </span>
 <span id="cb9-2"><a href=""></a>      <span class="at">col=</span><span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"green"</span>),</span>
@@ -362,7 +363,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href=""></a><span class="fu">st_length</span>( lines )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Units: [m]
-[1] 617095.0 637017.9</code></pre>
+[1] 435875.2 386484.1</code></pre>
 </div>
 </div>
 <div class="fragment">
@@ -371,7 +372,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href=""></a><span class="fu">st_bbox</span>( lines )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     xmin      ymin      xmax      ymax 
--80.58818  35.02370 -77.42562  37.96118 </code></pre>
+-78.98146  35.55627 -77.69536  38.77788 </code></pre>
 </div>
 </div>
 <div class="fragment">
@@ -384,7 +385,7 @@ Geodetic CRS:  WGS 84
 <span id="cb14-5"><a href=""></a>  <span class="fu">st_area</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb14-6"><a href=""></a>  <span class="fu">set_units</span>( km<span class="sc">^</span><span class="dv">2</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>61761.42 [km^2]</code></pre>
+<pre><code>32860.13 [km^2]</code></pre>
 </div>
 </div>
 </div>
@@ -392,11 +393,11 @@ Geodetic CRS:  WGS 84
 </section>
 <section id="textual-versions-of-geometry" class="slide level2">
 <h2>Textual Versions of <code>geometry</code></h2>
-<p>While it is easy to go from text <span class="math inline">\(\to\)</span> <code>POLYGON</code>, the same thing can be done going in the opposite direction.</p>
+<p>Any geometry can be written out as <em>Well Known Text</em> (WKT), a plain-text description of its shape and coordinates.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a>lines<span class="sc">$</span>geometry[<span class="dv">1</span>] <span class="sc">%&gt;%</span> <span class="fu">st_as_text</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "LINESTRING (-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77.92786 37.31192, -79.15871 37.54399)"</code></pre>
+<pre><code>[1] "LINESTRING (-78.48553 35.66016, -78.77618 35.55627, -77.69823 37.11616, -78.19129 37.35197, -77.94678 38.75742)"</code></pre>
 </div>
 </div>
 </section></section>
@@ -412,19 +413,19 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href=""></a>df.p <span class="ot">&lt;-</span> df[ <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,<span class="dv">1</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>,<span class="dv">6</span>),]</span>
 <span id="cb18-2"><a href=""></a>df.p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>        id      Data Longitude Latitude
-1   Rodney  34.76819 -77.71787 35.02370
-2   Rodney  38.24206 -77.92786 37.31192
-3   Rodney  67.64590 -79.38152 36.82536
-4   Rodney 114.35588 -79.15871 37.54399
-5   Rodney  47.82405 -77.90468 36.65865
-1.1 Rodney  34.76819 -77.71787 35.02370
-6    Sarah -34.79557 -80.58818 35.51979
-7    Sarah -21.35334 -77.42562 37.96118
-8    Sarah  63.50623 -78.25328 36.61868
-9    Sarah  56.15486 -79.91531 37.14066
-10   Sarah  29.78707 -79.47303 36.70159
-6.1  Sarah -34.79557 -80.58818 35.51979</code></pre>
+<pre><code>        id       Data Longitude Latitude
+1   Rodney  98.759269 -78.48553 35.66016
+2   Rodney  49.790138 -78.77618 35.55627
+3   Rodney  60.124115 -78.19129 37.35197
+4   Rodney  33.994487 -77.69823 37.11616
+5   Rodney   1.194861 -77.94678 38.75742
+1.1 Rodney  98.759269 -78.48553 35.66016
+6    Sarah  74.258820 -77.90507 36.81489
+7    Sarah  34.504144 -78.22234 38.30332
+8    Sarah  41.818465 -77.80990 35.94615
+9    Sarah 111.708637 -77.69536 36.26706
+10   Sarah  14.447750 -78.98146 38.77788
+6.1  Sarah  74.258820 -77.90507 36.81489</code></pre>
 </div>
 </div>
 </section>
@@ -446,13 +447,13 @@ Geodetic CRS:  WGS 84
 <pre><code>Simple feature collection with 2 features and 2 fields
 Geometry type: POLYGON
 Dimension:     XY
-Bounding box:  xmin: -80.58818 ymin: 35.0237 xmax: -77.42562 ymax: 37.96118
+Bounding box:  xmin: -78.98146 ymin: 35.55627 xmax: -77.69536 ymax: 38.77788
 Geodetic CRS:  WGS 84
 # A tibble: 2 × 3
   id      Data                                                          geometry
   &lt;chr&gt;  &lt;dbl&gt;                                                     &lt;POLYGON [°]&gt;
-1 Rodney  60.6 ((-79.38152 36.82536, -77.71787 35.0237, -77.90468 36.65865, -77…
-2 Sarah   18.7 ((-79.91531 37.14066, -79.47303 36.70159, -80.58818 35.51979, -7…</code></pre>
+1 Rodney  48.8 ((-78.48553 35.66016, -78.77618 35.55627, -77.69823 37.11616, -7…
+2 Sarah   55.3 ((-77.69536 36.26706, -77.8099 35.94615, -77.90507 36.81489, -78…</code></pre>
 </div>
 </div>
 </section>
@@ -522,7 +523,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href=""></a><span class="fu">ggplot</span>() <span class="sc">+</span> </span>
 <span id="cb29-2"><a href=""></a>  <span class="fu">geom_polygon</span>( <span class="fu">aes</span>( Longitude, Latitude, <span class="at">group=</span>group ),</span>
 <span id="cb29-3"><a href=""></a>                <span class="at">fill=</span><span class="st">"grey80"</span>,<span class="at">color =</span> <span class="st">"black"</span>, </span>
-<span id="cb29-4"><a href=""></a>                <span class="at">size =</span> <span class="fl">0.25</span>, <span class="at">data=</span>va_counties) <span class="sc">+</span></span>
+<span id="cb29-4"><a href=""></a>                <span class="at">linewidth =</span> <span class="fl">0.25</span>, <span class="at">data=</span>va_counties) <span class="sc">+</span></span>
 <span id="cb29-5"><a href=""></a>  <span class="fu">geom_sf</span>( <span class="fu">aes</span>( <span class="at">color=</span>Data), </span>
 <span id="cb29-6"><a href=""></a>           <span class="at">lwd=</span><span class="dv">3</span>, <span class="at">data=</span>lines) <span class="sc">+</span> </span>
 <span id="cb29-7"><a href=""></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -565,8 +566,8 @@ Geodetic CRS:  WGS 84
 </div>
 </div>
 </section>
-<section id="unziping-files" class="slide level2">
-<h2>Unziping Files</h2>
+<section id="unzipping-files" class="slide level2">
+<h2>Unzipping Files</h2>
 <p>You can open your computer finder and have the OS unzip the archives.</p>
 <p><code>OR</code></p>
 <p>You can have <code>R</code> do it.</p>
@@ -590,7 +591,7 @@ Geodetic CRS:  WGS 84
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href=""></a><span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Zoning_Districts.shp"</span> ) ) <span class="ot">-&gt;</span> districts </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpVK9Ier/Zoning_Districts.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpAXNRDp/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -696,10 +697,10 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 </section>
 <section id="spatial-joins" class="slide level2">
 <h2>Spatial Joins</h2>
-<p>In the topic covering [Relational Operations], we used <em>Primary</em> and <em>Foreign</em> Keys to join <code>data.frame</code> objects and combine data. We can do simliar operations using geospatial positions to perform <code>spatial joins</code>.</p>
+<p>In the topic covering <a href="https://dyerlabteaching.github.io/Joins/slides.html">Joins</a>, we used <em>Primary</em> and <em>Foreign</em> Keys to join <code>data.frame</code> objects and combine data. We can do similar operations using geospatial positions to perform <code>spatial joins</code>.</p>
 <p>There are a wide variety of operations available:</p>
 <center>
-<font color="red">Check out the <a href="https://github.com/rstudio/cheatsheets/blob/master/sf.pdf">Cheetsheet</a></font>
+<font color="red">Check out the <a href="https://github.com/rstudio/cheatsheets/blob/main/sf.pdf">Cheatsheet</a></font>
 </center>
 </section>
 <section id="secondary-vector-data-set" class="slide level2">
@@ -708,7 +709,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href=""></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>( <span class="fu">file.path</span>( shp_dir, <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span> ) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpVK9Ier/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpAXNRDp/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -740,7 +741,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <pre><code>[1] TRUE</code></pre>
 </div>
 </div>
-<div class="frgment">
+<div class="fragment">
 <p>If they differed, one could do something like:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href=""></a>road.shapefile <span class="sc">%&gt;%</span></span>
@@ -759,14 +760,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb52-6"><a href=""></a>          <span class="at">StreetType =</span> <span class="fu">factor</span>( StreetType) ) <span class="ot">-&gt;</span> roads</span>
 <span id="cb52-7"><a href=""></a><span class="fu">summary</span>( roads )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>   FullName          OneWay                    StreetType      SpeedLimit   
- Length:29081       1   :    2   Alley              : 3139   Min.   : 0.00  
- Class :character   FT  : 3225   Artery             : 5201   1st Qu.:25.00  
- Mode  :character   TF  : 3148   Highway            :  384   Median :25.00  
-                    NA's:22706   Highway Interchange:   93   Mean   :25.17  
-                                 Private            : 1540   3rd Qu.:25.00  
-                                 Ramp               :  378   Max.   :55.00  
-                                 Secondary          :18346   NA's   :7959   
+<pre><code>      FullName     OneWay                    StreetType      SpeedLimit   
+ Length   :29081   1  :    2   Alley              : 3139   Min.   : 0.00  
+ N.unique : 4081   FT : 3225   Artery             : 5201   1st Qu.:25.00  
+ N.blank  :    0   TF : 3148   Highway            :  384   Median :25.00  
+ Min.nchar:    3   NAs:22706   Highway Interchange:   93   Mean   :25.17  
+ Max.nchar:   46               Private            : 1540   3rd Qu.:25.00  
+ NAs      : 4526               Ramp               :  378   Max.   :55.00  
+                               Secondary          :18346   NAs    :7959   
      Length                   geometry    
  Min.   :    2.943   LINESTRING   :29081  
  1st Qu.:  164.849   epsg:2284    :    0  
@@ -787,14 +788,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb54-4"><a href=""></a>                            <span class="st">"Ramp"</span>)) <span class="ot">-&gt;</span> highways</span>
 <span id="cb54-5"><a href=""></a><span class="fu">summary</span>( highways )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>   FullName          OneWay                  StreetType    SpeedLimit   
- Length:855         1   :  0   Alley              :  0   Min.   : 0.00  
- Class :character   FT  :416   Artery             :  0   1st Qu.:25.00  
- Mode  :character   TF  :408   Highway            :384   Median :25.00  
-                    NA's: 31   Highway Interchange: 93   Mean   :36.19  
-                               Private            :  0   3rd Qu.:55.00  
-                               Ramp               :378   Max.   :55.00  
-                               Secondary          :  0   NA's   :131    
+<pre><code>      FullName   OneWay                  StreetType    SpeedLimit   
+ Length   :855   1  :  0   Alley              :  0   Min.   : 0.00  
+ N.unique :170   FT :416   Artery             :  0   1st Qu.:25.00  
+ N.blank  :  0   TF :408   Highway            :384   Median :25.00  
+ Min.nchar:  3   NAs: 31   Highway Interchange: 93   Mean   :36.19  
+ Max.nchar: 46             Private            :  0   3rd Qu.:55.00  
+ NAs      : 18             Ramp               :378   Max.   :55.00  
+                           Secondary          :  0   NAs    :131    
      Length                  geometry  
  Min.   :   14.46   LINESTRING   :855  
  1st Qu.:  276.48   epsg:2284    :  0  
@@ -856,8 +857,8 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 
 </div>
 <img data-src="slides_files/figure-revealjs/unnamed-chunk-42-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
-<section id="add-auxillary-data" class="slide level2 smaller">
-<h2>Add Auxillary Data</h2>
+<section id="add-auxiliary-data" class="slide level2 smaller">
+<h2>Add Auxiliary Data</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href=""></a>zone_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"</span></span>
 <span id="cb59-2"><a href=""></a></span>
@@ -918,39 +919,64 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <img data-src="slides_files/figure-revealjs/unnamed-chunk-48-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="section-9" class="slide level2">
 <h2>&nbsp;</h2>
+<p>Keep the roads that intersect the target with <code>st_filter()</code>.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href=""></a>fanRoads <span class="sc">%&gt;%</span></span>
-<span id="cb65-2"><a href=""></a>  <span class="fu">filter</span>( <span class="fu">st_intersects</span>( fanRoads, target, </span>
-<span id="cb65-3"><a href=""></a>                         <span class="at">sparse =</span> <span class="cn">FALSE</span> ) <span class="sc">==</span> <span class="cn">TRUE</span> ) <span class="sc">%&gt;%</span></span>
-<span id="cb65-4"><a href=""></a>  <span class="fu">as_data_frame</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName ) <span class="sc">%&gt;%</span></span>
-<span id="cb65-5"><a href=""></a>  <span class="fu">arrange</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span>) <span class="sc">%&gt;%</span> <span class="fu">unique</span>() </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb65-2"><a href=""></a>  <span class="fu">st_filter</span>( target ) <span class="ot">-&gt;</span> targetRoads</span>
+<span id="cb65-3"><a href=""></a>targetRoads <span class="sc">%&gt;%</span></span>
+<span id="cb65-4"><a href=""></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName ) <span class="sc">%&gt;%</span></span>
+<span id="cb65-5"><a href=""></a>  <span class="fu">distinct</span>() <span class="sc">%&gt;%</span> <span class="fu">arrange</span>( <span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 39 × 1
-   `Street Name` 
-   &lt;chr&gt;         
- 1 Allison St    
- 2 Birch St      
- 3 Boyd St       
- 4 Floyd Ave     
- 5 Grove Ave     
- 6 Hanover Ave   
- 7 Kensington Ave
- 8 Lombardy Pl   
- 9 Madumbie Lane 
-10 Monument Ave  
-# ℹ 29 more rows</code></pre>
+<pre><code>          Street Name
+1          Allison St
+2            Birch St
+3             Boyd St
+4           Floyd Ave
+5           Grove Ave
+6         Hanover Ave
+7      Kensington Ave
+8         Lombardy Pl
+9       Madumbie Lane
+10       Monument Ave
+11        N Allen Ave
+12 N Arthur Ashe Blvd
+13     N Brunswick St
+14        N Davis Ave
+15        N Granby St
+16      N Harrison St
+17        N Harvie St
+18      N Lombardy St
+19        N Meadow St
+20        N Morris St
+21      N Mulberry St
+22          N Plum St
+23      N Robinson St
+24       N Rowland St
+25      N Shields Ave
+26     N Stafford Ave
+27          N Vine St
+28           Park Ave
+29          Ryland St
+30          S Plum St
+31     S Stafford Ave
+32      Strawberry St
+33         Stuart Ave
+34         Stuart Cir
+35      Trouvaille Al
+36      W Franklin St
+37          W Main St
+38           West Ave
+39               &lt;NA&gt;</code></pre>
 </div>
 </div>
 </section>
 <section id="section-10" class="slide level2">
 <h2>&nbsp;</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href=""></a>fanRoads <span class="sc">%&gt;%</span></span>
-<span id="cb67-2"><a href=""></a>  <span class="fu">filter</span>( <span class="fu">st_intersects</span>( fanRoads, target, </span>
-<span id="cb67-3"><a href=""></a>                         <span class="at">sparse =</span> <span class="cn">FALSE</span> ) <span class="sc">==</span> <span class="cn">TRUE</span> ) <span class="sc">%&gt;%</span></span>
-<span id="cb67-4"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb67-5"><a href=""></a>  <span class="fu">geom_sf</span>( <span class="at">data=</span>target  ) <span class="sc">+</span></span>
-<span id="cb67-6"><a href=""></a>  <span class="fu">geom_sf</span>( <span class="at">color=</span><span class="st">"darkgreen"</span> ) <span class="sc">+</span> <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href=""></a>targetRoads <span class="sc">%&gt;%</span></span>
+<span id="cb67-2"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb67-3"><a href=""></a>  <span class="fu">geom_sf</span>( <span class="at">data=</span>target  ) <span class="sc">+</span></span>
+<span id="cb67-4"><a href=""></a>  <span class="fu">geom_sf</span>( <span class="at">color=</span><span class="st">"darkgreen"</span> ) <span class="sc">+</span> <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
 <img data-src="slides_files/figure-revealjs/unnamed-chunk-50-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>

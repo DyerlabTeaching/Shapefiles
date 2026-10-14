@@ -15,7 +15,7 @@ This section covers the following topics:
 
 - Creation of `sf::LINESTRING` and `sf::MULTIPOLYGON` objects from raw data.  
 
-- Loading map polygons from `get_data()`  
+- Loading map polygons from `map_data()`  
 
 - Importing data from ESRI shapefile.  
 
@@ -47,6 +47,7 @@ It is possible to make data from scratch by entering coordinates directly.
 
 
 ```{r}
+set.seed( 543 )
 df <- data.frame( id = c(rep("Rodney",5), rep("Sarah",5)),
                   Data = rnorm( 10, 42, 42),
                   Longitude = rnorm(10, -78, 1 ),
@@ -57,7 +58,7 @@ df
 
 ## Data Sources: *De novo* Creation  {.scrollable}
 
-To Make to `sf` as `POINT` objects as normal.
+To make them into `sf` `POINT` objects, use `st_as_sf()` as normal.
 
 ```{r}
 df %>%
@@ -73,7 +74,7 @@ pts
 
 ::: {.column width="40%"}
 
-We can easily mix individual aesthetic properties to change the representaion of the points provided by using `geom_sf()`.
+We can easily mix individual aesthetic properties to change the representation of the points provided by using `geom_sf()`.
 
 &nbsp;
 
@@ -140,7 +141,7 @@ lines
 
 ::: {.column width="50%"}
 
-Just like when we were working with `POINT` objects, we can use both built-in graphing approaches as well as `ggplot()` for visualizing.  Here I'm goint to plot the two line objects using normal graphics. 
+Just like when we were working with `POINT` objects, we can use both built-in graphing approaches as well as `ggplot()` for visualizing.  Here I'm going to plot the two line objects using normal graphics. 
 
 ```{r eval=FALSE}
 plot( lines["Data"], 
@@ -200,7 +201,7 @@ lines %>%
 
 ## Textual Versions of `geometry`
 
-While it is easy to go from text $\to$ `POLYGON`, the same thing can be done going in the opposite direction.
+Any geometry can be written out as *Well Known Text* (WKT), a plain-text description of its shape and coordinates.
 
 
 ```{r}
@@ -299,7 +300,7 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
 ggplot() + 
   geom_polygon( aes( Longitude, Latitude, group=group ),
                 fill="grey80",color = "black", 
-                size = 0.25, data=va_counties) +
+                linewidth = 0.25, data=va_counties) +
   geom_sf( aes( color=Data), 
            lwd=3, data=lines) + 
   coord_sf()
@@ -356,7 +357,7 @@ download.file( roads_url, destfile = file.path( shp_dir, "Roads.zip" ) )
 
 :::
 
-## Unziping Files
+## Unzipping Files
 
 You can open your computer finder and have the OS unzip the archives.
 
@@ -445,11 +446,11 @@ plot( st_geometry( districts[districts$OBJECTID==530,] ),
 
 ## Spatial Joins
 
-In the topic covering [Relational Operations], we used *Primary* and *Foreign* Keys to join `data.frame` objects and combine data.  We can do simliar operations using geospatial positions to perform `spatial joins`.
+In the topic covering [Joins](https://dyerlabteaching.github.io/Joins/slides.html), we used *Primary* and *Foreign* Keys to join `data.frame` objects and combine data.  We can do similar operations using geospatial positions to perform `spatial joins`.
 
 There are a wide variety of operations available:
 
-<center><font color="red">Check out the [Cheetsheet](https://github.com/rstudio/cheatsheets/blob/master/sf.pdf)</font></center>
+<center><font color="red">Check out the [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf)</font></center>
 
 
 
@@ -476,7 +477,7 @@ names( road.shapefile )
 st_crs( road.shapefile ) == st_crs( districts )
 ```
 
-:::{.frgment}
+:::{.fragment}
 If they differed, one could do something like:
 
 ```{r eval=FALSE}
@@ -582,7 +583,7 @@ plot( theFan["Name"])
 ```
 
 
-## Add Auxillary Data {.smaller}
+## Add Auxiliary Data {.smaller}
 
 
 ```{r}
@@ -650,21 +651,21 @@ plot( st_geometry( target ) )
 
 ## &nbsp;
 
+Keep the roads that intersect the target with `st_filter()`.
+
 ```{r}
 fanRoads %>%
-  filter( st_intersects( fanRoads, target, 
-                         sparse = FALSE ) == TRUE ) %>%
-  as_data_frame() %>% select( `Street Name` = FullName ) %>%
-  arrange( `Street Name`) %>% unique() 
+  st_filter( target ) -> targetRoads
+targetRoads %>%
+  st_drop_geometry() %>% select( `Street Name` = FullName ) %>%
+  distinct() %>% arrange( `Street Name` )
 ```
 
 
 ## &nbsp;
 
 ```{r}
-fanRoads %>%
-  filter( st_intersects( fanRoads, target, 
-                         sparse = FALSE ) == TRUE ) %>%
+targetRoads %>%
   ggplot() +
   geom_sf( data=target  ) +
   geom_sf( color="darkgreen" ) + theme_void()
