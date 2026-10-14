@@ -1,26 +1,173 @@
 ---
-title: "Shapefiles Homework"
+title: "Lines, Polygons, and Shapefiles Homework"
+subtitle: "Is the urban–suburban divide real?"
 author: "YOUR NAME HERE"
+date: today
+abstract: |
+  A sentence or two saying what the document does: the dogwood data, the land cover in each tree's neighborhood, and whether the urban and suburban habitats really differ.
 format: dyerlab-html
 ---
 
-## Homework
+## The Idea
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+One of the central habits of reproducible research is that the **words and the code that produce them are written together**. A paragraph of *Methods* is followed immediately by the chunk that carries out what it describes. A sentence in *Results* is backed by a table or figure generated in the chunk beside it, and every number that appears in the running text is read straight from a variable in memory with an inline `` `r ` `` expression --- never typed by hand.
 
-## Running Code
+In class, we built neighborhoods around 15 of the dogwood trees and measured the land cover inside them. Here you will take the same workflow to **all 58 trees**. The trees were sorted into three habitats: `Native` trees in Pocahontas State Park, and cultivars split at 37.45°N into `Urban` (north) and `Suburban` (south). The `Native` trees are obviously in a different landscape. Your job is to decide whether the line between `Urban` and `Suburban` is a real difference in the landscape the trees live in, or just a line we drew.
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+Read the worked example, which compares the two types of maternal trees (`Mother`), then reproduce its structure for the three `Habitat`s.
+
+## A Worked Example
+
+### Methods
+
+> **Data.** We used the locations of 58 maternal dogwood trees sampled along a transect from the city of Richmond, Virginia south to Pocahontas State Park, stored as a CSV in the course data repository. Each tree is recorded as either a `Cultivar` or a `Native` maternal tree (`Mother`). We converted the coordinates into spatial points and reprojected them into UTM Zone 17N so that distances are in meters.
 
 ```{r}
-1 + 1
+#| message: false
+#| warning: false
+library( sf )
+library( tidyverse )
+library( knitr )
+library( kableExtra )
+
+url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
+
+read_csv( url ) |>
+  st_as_sf( coords = c("Longitude", "Latitude"),
+            crs = 4326 ) |>
+  st_transform( crs = 32617 ) -> trees
 ```
 
-You can add options to executable code like this
+> **Analysis.** We defined each tree's neighborhood as the area within 250 m of it and measured the proportion of each neighborhood in seven land cover categories from the 2021 National Land Cover Database using the course `get_landcover()` function. We then averaged those proportions across the trees of each type.
 
 ```{r}
-#| echo: false
-2 * 2
+source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+
+trees |>
+  st_buffer( dist = 250 ) |>
+  get_landcover() -> lc
+
+lc |>
+  group_by( Mother, Category ) |>
+  summarize( Proportion = mean( Proportion ),
+             .groups = "drop" ) -> mother_lc
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+### Preparing the reporting values
+
+Before writing the Results, pull the handful of numbers you are going to quote out of the summary and format them here, giving each a short name.
+
+```{r}
+n_cultivar <- sum( trees$Mother == "Cultivar" )
+n_native   <- sum( trees$Mother == "Native" )
+
+cultivar_dev <- mother_lc |>
+  filter( Mother == "Cultivar", Category == "Developed" ) |>
+  pull( Proportion )
+native_forest <- mother_lc |>
+  filter( Mother == "Native", Category == "Forest" ) |>
+  pull( Proportion )
+
+cultivar_dev  <- format( 100 * cultivar_dev, digits = 2 )
+native_forest <- format( 100 * native_forest, digits = 2 )
+```
+
+### Results
+
+> The two types of maternal trees live in very different landscapes (@tbl-mother, @fig-mother). On average, the neighborhoods of the `r n_cultivar` cultivated trees were `r cultivar_dev`% developed, while those of the `r n_native` native trees were `r native_forest`% forest.
+
+```{r}
+#| label: tbl-mother
+#| tbl-cap: "Average proportion of each land cover category within 250 m of cultivated and native maternal dogwood trees."
+mother_lc |>
+  pivot_wider( names_from = Mother,
+               values_from = Proportion ) |>
+  kable( digits = 3 ) |>
+  kable_paper( "striped", full_width = FALSE )
+```
+
+```{r}
+#| label: fig-mother
+#| fig-cap: "Average proportion of each land cover category within 250 m of cultivated and native maternal dogwood trees."
+ggplot( mother_lc,
+        aes( Category, Proportion, fill = Mother ) ) +
+  geom_col( position = "dodge" ) +
+  coord_flip() +
+  labs( x = NULL,
+        y = "Average proportion of a 250 m neighborhood" ) +
+  theme_minimal()
+```
+
+Here is the literal source of that Results paragraph --- note that every number is an inline expression:
+
+```{verbatim}
+The two types of maternal trees live in very different landscapes (@tbl-mother, @fig-mother). On average, the neighborhoods of the `r n_cultivar` cultivated trees were `r cultivar_dev`% developed, while those of the `r n_native` native trees were `r native_forest`% forest.
+```
+
+## Your Assignment
+
+Use all 58 trees and the same 250 m neighborhoods to compare the three `Habitat`s, and decide whether the `Urban` and `Suburban` habitats are really different.[^ref-narrative]
+
+### Your document must have
+
+1. **Methods** --- a *Data* paragraph followed by the chunk that reads the CSV and makes the spatial points (in a projection whose units are meters), then an *Analysis* paragraph followed by the chunk that builds the neighborhoods, gets their land cover, and summarizes it by `Habitat`.
+2. **A map** of the trees' neighborhoods colored by `Habitat`, with `geom_sf()`.
+3. **A reporting-values chunk** --- `format()` the numbers you quote in the Results, and give each a short name.
+4. **One publication-quality table**, built with `kable()` and `kableExtra`, of the average proportion of each land cover category in each `Habitat` (one column per `Habitat`).
+5. **A bar chart** of the same information.
+6. **A north--south plot** of the proportion of `Developed` land cover in each *cultivated* tree's neighborhood (y-axis) against the tree's `Latitude` (x-axis), with the points colored by `Habitat`. The `Latitude` column was used up making the points, but the data you read with `read_csv()` still has it, and you can join it back on by `Tree`.[^ref-joins] Add `geom_vline( xintercept = 37.45, linetype = "dashed" )` to show where the habitats were split.
+7. **Results** --- a paragraph that reports your numbers as bare inline `` `r ` `` values (no `format()` in the prose) and refers to your map, table, and figures using Quarto's cross-reference system (`#| label: tbl-...` / `#| tbl-cap:` and `#| label: fig-...` / `#| fig-cap:` in the chunks, and `@tbl-...` / `@fig-...` in the sentences).[^ref-xref]
+8. **An interpretation** --- a paragraph answering the question: *Is the divide between `Urban` and `Suburban` dogwoods a real difference in the landscape they live in?* Use your table and your north--south plot to support your answer. Think about both the averages *and* how much the individual trees in the two habitats overlap.
+
+Then answer briefly, a sentence or two each:
+
+- What units is the `250` in `st_buffer( dist = 250 )`, and how can you tell from the `trees` object? Why did we reproject into UTM first rather than buffering the points in their original longitude/latitude (`EPSG:4326`)?
+- Your table *averages* the proportions across each tree's neighborhood. If you instead unioned all the neighborhoods in a habitat into a single polygon and got the land cover of that, how could the answer differ, and why?
+
+[^ref-narrative]: Every step is in the module [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) (sections *Buffers and Neighborhoods* and *Land Cover*) and in what you did in the in-class activity.
+
+[^ref-joins]: See the [Joins](https://dyerlabteaching.github.io/Joins/narrative.html) narrative.  Join onto the land cover results (a plain `data.frame`), not onto the `sf` object.
+
+[^ref-xref]: Cross-referencing tables is in the [Tidyverse](https://dyerlabteaching.github.io/Tidyverse/narrative.html#cross-referencing-tables-in-text) narrative; figures work the same way with a `fig-` label and a `fig-cap`.
+
+## What You Turn In
+
+**One file: the rendered, self-contained `.html`.** Not the `.qmd`, and not a copy of this page. Make a *new* Quarto document that contains only your own work --- your Methods and Results sections with their chunks, the reporting-values chunk, your map, table, and figures, your interpretation, and your brief answers to the two questions.
+
+The worked example above is a model to imitate, not text to paste into your document.
+
+### Making the document
+
+1. In RStudio: **File ▸ New File ▸ Quarto Document…**
+2. In the dialog, enter a title and your name, leave the engine set to **Knitr**, and click **Create**.
+3. Delete everything RStudio puts below the header (the "Quarto" boilerplate and its example chunk).
+4. Replace the header it generated with the one below.
+5. Save the file into your course project folder as `Shapefiles-Homework.qmd`.
+6. Write your content, then click **Render** to produce the `.html`. That HTML file is what you submit.
+
+### The full YAML header
+
+```yaml
+---
+title: "Lines, Polygons, and Shapefiles Homework"
+author: "Your Name"
+date: today
+abstract: |
+  A sentence or two saying what the document does: the data, the question, and what you found.
+format:
+  html:
+    self-contained: true
+    code-tools: true
+---
+```
+
+- **`title` / `author` / `date` / `abstract`** --- complete front matter, including a short summary where a scientific paper would put its abstract. `date: today` fills itself in at render time.
+- **`format: html`** --- render to a single web page I can open in any browser.
+- **`self-contained: true`** --- bundle every image, style, and script *into* that one `.html` file. Without it the file depends on a sibling `*_files/` folder that never makes it into the upload, and your figures and formatting arrive broken.
+- **`code-tools: true`** --- adds the "</> Code" button in the top-right that lets a reader view the full source. **This is not optional.** If I cannot see the code behind a wrong answer, I cannot tell whether you were one typo away or lost the plot entirely --- which means I cannot give partial credit, point out where it went sideways, or help you fix it.
+
+Use this same header layout for every document you turn in this course.
+
+## How This Is Graded
+
+This assignment is scored with the **Online Homework Rubric** on the Canvas site --- the same rubric used for every online homework in this course. It covers online access to the published document, front matter, formatting, and whether the document stands on its own; the remaining points come from the assignment-specific work above.

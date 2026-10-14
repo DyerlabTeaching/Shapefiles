@@ -1,0 +1,140 @@
+---
+title: "Lines, Polygons, and Shapefiles Homework Key"
+author: "Rodney J. Dyer"
+date: today
+abstract: |
+  A worked answer to the Lines, Polygons, and Shapefiles homework. We measure the 2021 NLCD land cover within 250 m of 58 maternal dogwood trees and compare the Urban, Suburban, and Native habitats. Urban neighborhoods are more developed than Suburban ones on average, but the two overlap broadly and development changes gradually with latitude, so the 37.45°N split is a convenient cut across a gradient rather than a sharp boundary.
+format: dyerlab-html
+---
+
+```{r}
+#| message: false
+#| warning: false
+library( sf )
+library( tidyverse )
+library( knitr )
+library( kableExtra )
+```
+
+## Methods
+
+**Data.** We used the locations of 58 maternal dogwood trees sampled along a transect from the city of Richmond, Virginia south to Pocahontas State Park, stored as a CSV in the course data repository. Each tree is assigned to a `Habitat`: `Native` trees in the park, and cultivated trees split at 37.45°N into `Urban` (north) and `Suburban` (south). We converted the coordinates into spatial points and reprojected them into UTM Zone 17N so that distances are in meters.
+
+```{r}
+url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
+
+read_csv( url ) -> dogwoods
+
+dogwoods |>
+  st_as_sf( coords = c("Longitude", "Latitude"),
+            crs = 4326 ) |>
+  st_transform( crs = 32617 ) -> trees
+```
+
+**Analysis.** We defined each tree's neighborhood as the area within 250 m of it and measured the proportion of each neighborhood in seven land cover categories from the 2021 National Land Cover Database using the course `get_landcover()` function. We averaged those proportions across the trees in each habitat. To see how development changes along the transect, we joined each tree's latitude back onto its land cover by `Tree`.
+
+```{r}
+source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+
+trees |>
+  st_buffer( dist = 250 ) -> nbhd
+
+nbhd |>
+  get_landcover() -> lc
+
+lc |>
+  group_by( Habitat, Category ) |>
+  summarize( Proportion = mean( Proportion ),
+             .groups = "drop" ) -> habitat_lc
+
+lc |>
+  filter( Mother == "Cultivar",
+          Category == "Developed" ) |>
+  left_join( dogwoods |> select( Tree, Latitude ),
+             by = "Tree" ) -> cultivar_dev
+```
+
+## Reporting values
+
+```{r}
+n_urban    <- sum( trees$Habitat == "Urban" )
+n_suburban <- sum( trees$Habitat == "Suburban" )
+n_native   <- sum( trees$Habitat == "Native" )
+
+mean_dev <- function( habitat ) {
+  habitat_lc |>
+    filter( Habitat == habitat, Category == "Developed" ) |>
+    pull( Proportion )
+}
+
+urban_dev    <- format( 100 * mean_dev( "Urban" ), digits = 2 )
+suburban_dev <- format( 100 * mean_dev( "Suburban" ), digits = 2 )
+native_dev   <- format( 100 * mean_dev( "Native" ), digits = 2 )
+
+urban <- cultivar_dev |> filter( Habitat == "Urban" )
+suburban <- cultivar_dev |> filter( Habitat == "Suburban" )
+
+urban_min    <- format( 100 * min( urban$Proportion ), digits = 2 )
+n_urban_full <- sum( urban$Proportion > 0.99 )
+n_urban_low  <- sum( urban$Proportion < mean_dev( "Suburban" ) )
+n_sub_high   <- sum( suburban$Proportion > mean_dev( "Urban" ) )
+```
+
+## Results
+
+The `r n_urban` `Urban`, `r n_suburban` `Suburban`, and `r n_native` `Native` trees are arranged along the transect from north to south (@fig-map). On average, `Urban` neighborhoods were `r urban_dev`% developed, `Suburban` neighborhoods `r suburban_dev`%, and `Native` neighborhoods only `r native_dev`% (@tbl-habitat, @fig-bars). The `Suburban` neighborhoods made up the difference mostly with forest and wetland.
+
+Along the transect, however, the two cultivated habitats overlap broadly (@fig-gradient). `Urban` neighborhoods ranged as low as `r urban_min`% developed. `r n_urban_low` of the `r n_urban` `Urban` trees were less developed than the average `Suburban` neighborhood, and `r n_sub_high` of the `r n_suburban` `Suburban` trees were more developed than the average `Urban` neighborhood. Only the northernmost trees were consistently surrounded by development: `r n_urban_full` `Urban` trees had neighborhoods that were essentially completely developed.
+
+```{r}
+#| label: fig-map
+#| fig-cap: "The 250 m neighborhoods of the 58 maternal dogwood trees, colored by habitat."
+ggplot( nbhd ) +
+  geom_sf( aes( fill = Habitat ) ) +
+  coord_sf() +
+  theme_minimal() +
+  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+```
+
+```{r}
+#| label: tbl-habitat
+#| tbl-cap: "Average proportion of each land cover category within 250 m of maternal dogwood trees in each habitat."
+habitat_lc |>
+  pivot_wider( names_from = Habitat,
+               values_from = Proportion ) |>
+  kable( digits = 3 ) |>
+  kable_paper( "striped", full_width = FALSE )
+```
+
+```{r}
+#| label: fig-bars
+#| fig-cap: "Average proportion of each land cover category within 250 m of maternal dogwood trees in each habitat."
+ggplot( habitat_lc,
+        aes( Category, Proportion, fill = Habitat ) ) +
+  geom_col( position = "dodge" ) +
+  coord_flip() +
+  labs( x = NULL,
+        y = "Average proportion of a 250 m neighborhood" ) +
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-gradient
+#| fig-cap: "Proportion of developed land within 250 m of each cultivated dogwood tree, by latitude. The dashed line at 37.45°N is where the trees were split into Urban and Suburban habitats."
+ggplot( cultivar_dev,
+        aes( Latitude, Proportion, color = Habitat ) ) +
+  geom_point( size = 2 ) +
+  geom_vline( xintercept = 37.45, linetype = "dashed" ) +
+  labs( y = "Proportion Developed within 250 m" ) +
+  theme_minimal()
+```
+
+## Interpretation
+
+Partly. On average, `Urban` dogwoods do live in more developed landscapes than `Suburban` ones (`r urban_dev`% vs. `r suburban_dev`% developed), and the `Suburban` neighborhoods contain more forest and wetland. But the north--south plot shows that this is not a clean divide. The `Suburban` trees are much more variable, some in neighborhoods as developed as any in the city and others with half their surroundings in forest or wetland, and the `Urban` trees just north of 37.45°N fall within that same range. Only the northernmost trees are surrounded entirely by development, so the floor on development rises toward the city rather than jumping at the line. Both habitats are mostly developed and far from the `Native` trees in the park. So the 37.45°N line is a convenient cut across a gradient rather than a boundary between two distinct landscapes. A split farther north, or treating development as a continuous variable, would describe the data better. Whether the averages differ by more than we would expect by chance is a question for the statistical tools later in the course.
+
+## Questions
+
+**Why reproject before buffering?** The `250` is in meters, because `st_buffer()` uses the units of the coordinate reference system, and `st_crs( trees )` (or the `Projected CRS: WGS 84 / UTM zone 17N` line when you print `trees`) shows a projection whose units are meters. Longitude/latitude are angles, not distances, so the meaning of `250` there depends on how `sf` is set up: by default it buffers on a sphere and treats the distance as meters, but with spherical geometry turned off (`sf_use_s2( FALSE )`) it would mean 250 *degrees*, a "neighborhood" larger than the Earth. Reprojecting into a meter-based projection makes the units explicit and the result the same no matter how `sf` is configured.
+
+**Averaging vs. unioning.** Averaging gives every tree equal weight. A union counts each piece of ground once, so where neighborhoods overlap (trees close together), that ground counts once instead of once per tree. Trees in a tight cluster would count for less in the unioned version than in the average, and isolated trees for relatively more. The two agree when the neighborhoods do not overlap; they differ most when trees are clustered in a different landscape than the rest of their habitat.
