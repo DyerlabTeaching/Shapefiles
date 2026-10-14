@@ -1,0 +1,290 @@
+---
+title: "In Class Activity - Lines, Polygons, and Shapefiles (Key)"
+format: dyerlab-html
+---
+
+This activity focuses on building and using `LINESTRING` and `POLYGON` objects in `R`.  We will use them to ask an ecological question about dogwood trees sampled along a transect in Richmond, Virginia.
+
+```{r}
+#| message: false
+library( sf )
+library( tidyverse )
+library( units )
+```
+
+You will also need the `terra` library installed (`install.packages("terra")`), though you will not load it yourself.  It is used inside the land cover function at the end.
+
+## The Data
+
+These are maternal dogwood trees from an ongoing study.  Each tree was sampled in one of two habitat types: `Cultivar` trees growing in suburban and urban Richmond and Chesterfield, and `Native` trees in Pocahontas State Park.  The columns are:
+
+- `Type`: The habitat the tree was sampled in.
+- `Tree`: An ID for the tree.
+- `Longitude` and `Latitude`: Its location (decimal degrees, WGS84).
+- `N`: The number of offspring (seeds) collected from that tree.
+
+The data are in the course data repository at:
+
+```{r}
+url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
+```
+
+## The Big Picture
+
+The main question you are going to work on here is:
+
+> Do the `Cultivar` and `Native` dogwoods live in different landscapes?  And does a single transect through the study area represent the landscape the trees actually live in?
+
+To answer this, you will build lines and polygons around the trees and then measure the land cover inside them.  Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) handy.
+
+## Points
+
+1. Read in the data with `read_csv()` and convert it into an `sf` object of `POINT`s with `st_as_sf()`.  Make sure you give it the correct `crs`.
+
+```{r}
+read_csv( url ) %>%
+  st_as_sf( coords = c("Longitude", "Latitude"),
+            crs = 4326 ) -> trees
+trees
+```
+
+2. We are going to measure lengths and areas in meters, so reproject the trees into UTM Zone 17N (`EPSG:32617`), whose units are meters.  Show that the CRS has changed.
+
+```{r}
+trees %>%
+  st_transform( crs = 32617 ) -> trees
+st_crs( trees )$Name
+```
+
+3. Make a plot of the trees, colored by `Type`.
+
+```{r}
+ggplot( trees ) +
+  geom_sf( aes( color = Type ) ) +
+  coord_sf()
+```
+
+## Lines
+
+4. A transect is a straight line through the study area.  Find the northernmost and southernmost trees (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates) and make a `LINESTRING` that connects them.  What are their `Tree` IDs?
+
+```{r}
+y <- st_coordinates( trees )[ , "Y" ]
+ends <- trees[ y == max( y ) | y == min( y ), ]
+ends$Tree
+
+ends %>%
+  summarize() %>%
+  st_cast( "LINESTRING" ) -> transect
+transect
+```
+
+> **Answer:** The ends are `124UWP` (northernmost, a `Cultivar`) and `1026PWP` (southernmost, a `Native`).  `summarize()` combines the two points into a `MULTIPOINT`, which is then cast to a `LINESTRING`.
+
+5. How long is the transect?  Report it in kilometers.
+
+```{r}
+st_length( transect ) %>%
+  set_units( km )
+```
+
+> **Answer:** About 22 km.
+
+6. Make a plot of the trees with the transect drawn on top.
+
+```{r}
+ggplot() +
+  geom_sf( aes( color = Type ), data = trees ) +
+  geom_sf( data = transect ) +
+  coord_sf()
+```
+
+7. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
+
+```{r}
+trees[ order( y ), ] %>%
+  summarize( do_union = FALSE ) %>%
+  st_cast( "LINESTRING" ) -> zigzag
+st_length( zigzag ) %>%
+  set_units( km )
+```
+
+> **Answer:** About 88 km, four times the transect.  A `LINESTRING` connects points in the order given, so sorting only by latitude makes the line zig-zag east and west between trees that are at similar latitudes, especially in the tight cluster in the park.  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
+
+## Polygons
+
+8. Let's define each tree's *neighborhood* as everything within 250 m of it.  Use `st_buffer()` to make a polygon around each tree.  What kind of geometry does this make?  What is the area of one neighborhood, and how does it compare to $\pi r^2$?  Why might it be slightly different?
+
+```{r}
+trees %>%
+  st_buffer( dist = 250 ) -> nbhd
+st_geometry_type( nbhd ) %>% unique()
+st_area( nbhd[1, ] )
+pi * 250^2
+```
+
+> **Answer:** Each buffer is a `POLYGON`.  Its area (about 196,260 m²) is slightly smaller than πr² (196,350 m²) because the circle is approximated by a polygon with a finite number of straight sides, which always fits just inside the true circle.
+
+9. Buffer the transect by the same 250 m to make a *corridor* polygon.  What is its area in square kilometers?
+
+```{r}
+transect %>%
+  st_buffer( dist = 250 ) -> corridor
+st_area( corridor ) %>%
+  set_units( km^2 )
+```
+
+> **Answer:** About 11.2 km².
+
+10. For each `Type`, make a single polygon that encloses all of its trees (the *convex hull*).  What are their areas in square kilometers?  Make a plot of both hulls with the trees on top.
+
+```{r}
+trees %>%
+  group_by( Type ) %>%
+  summarize() %>%
+  st_convex_hull() -> hulls
+hulls %>%
+  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+
+ggplot() +
+  geom_sf( aes( fill = Type ), alpha = 0.25, data = hulls ) +
+  geom_sf( aes( color = Type ), data = trees ) +
+  coord_sf()
+```
+
+> **Answer:** About 51.3 km² for `Cultivar` and 16.7 km² for `Native`.
+
+## Land Cover
+
+The land cover data are from the 2021 [National Land Cover Database](https://www.mrlc.gov/data) (NLCD), which classifies every 30 m × 30 m cell of the US into a land cover type.  These data are a *raster*, which we will learn to work with in a later topic.  For now, the function below does that part for you.  Run the chunk to load it, but you do not need to understand what is inside it yet.
+
+To use it, pass `get_landcover()` an `sf` object of polygons.  It returns a `data.frame` with one row for each polygon and each of seven land cover categories (`Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`).  The rows carry along all the columns from your polygons (but not the geometry) plus the `Proportion` of that polygon's area covered by that category.
+
+```{r}
+#| code-fold: true
+#| code-summary: "The land cover function (run this, but don't worry about it yet)"
+get_landcover <- function( polygons ) {
+  nlcd_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_NLCD_2021.tif"
+  nlcd_file <- file.path( tempdir(), "Richmond_NLCD_2021.tif" )
+  if( !file.exists( nlcd_file ) || file.size( nlcd_file ) == 0 ) {
+    download.file( nlcd_url, nlcd_file, mode = "wb", quiet = TRUE )
+  }
+  nlcd <- terra::rast( nlcd_file )
+
+  # Proportion of each polygon's area in each NLCD class
+  areas <- terra::extract( nlcd,
+                           terra::vect( sf::st_transform( polygons, terra::crs( nlcd ) ) ),
+                           exact = TRUE )
+  names( areas ) <- c("ID", "Code", "Fraction")
+
+  # Group the 15 NLCD classes into 7 categories
+  key <- tibble::tibble( Code = c(11, 21, 22, 23, 24, 31, 41, 42, 43, 52, 71, 81, 82, 90, 95),
+                         Category = c("Water",
+                                      "Developed", "Developed", "Developed", "Developed",
+                                      "Barren",
+                                      "Forest", "Forest", "Forest",
+                                      "Shrub/Grass", "Shrub/Grass",
+                                      "Agriculture", "Agriculture",
+                                      "Wetland", "Wetland") )
+
+  areas |>
+    dplyr::inner_join( key, by = "Code" ) |>
+    dplyr::mutate( Category = factor( Category, levels = unique( key$Category ) ) ) |>
+    dplyr::group_by( ID, Category, .drop = FALSE ) |>
+    dplyr::summarize( Cells = sum( Fraction ), .groups = "drop_last" ) |>
+    dplyr::mutate( Proportion = Cells / sum( Cells ) ) |>
+    dplyr::ungroup() |>
+    dplyr::mutate( Category = as.character( Category ) ) |>
+    dplyr::left_join( sf::st_drop_geometry( polygons ) |> dplyr::mutate( ID = dplyr::row_number() ),
+                      by = "ID" ) |>
+    dplyr::select( -ID, -Cells ) |>
+    dplyr::relocate( Category, Proportion, .after = dplyr::last_col() )
+}
+```
+
+11. Get the land cover for each tree's 250 m neighborhood.  How many rows does the result have, and why that many?
+
+```{r}
+lc <- get_landcover( nbhd )
+nrow( lc )
+head( lc )
+```
+
+> **Answer:** 406 rows: one for each of the 58 trees in each of the 7 land cover categories (58 × 7 = 406).
+
+12. Make a table of the average proportion of each land cover category for `Cultivar` and `Native` trees (one column for each `Type`).
+
+```{r}
+lc %>%
+  group_by( Type, Category ) %>%
+  summarize( Proportion = mean( Proportion ), .groups = "drop" ) %>%
+  pivot_wider( names_from = Type,
+               values_from = Proportion )
+```
+
+> **Answer:** `Cultivar` neighborhoods average about 84% developed and 10% forest; `Native` neighborhoods are about 5% developed and 84% forest.
+
+13. Make a plot comparing the proportion of `Developed` and `Forest` land cover in the neighborhoods of the two types of trees.
+
+```{r}
+lc %>%
+  filter( Category %in% c("Developed", "Forest") ) %>%
+  ggplot( aes( Type, Proportion ) ) +
+  geom_boxplot() +
+  facet_wrap( ~ Category )
+```
+
+14. Now compare the transect to where the trees live.  Get the land cover for the transect corridor and for all of the tree neighborhoods combined into a single polygon (hint: `summarize()` an `sf` object with no grouping unions its geometries).  Make a table with the two side by side.  Does the transect represent the landscape the trees actually live in?
+
+```{r}
+corridor %>%
+  mutate( Region = "Transect" ) %>%
+  get_landcover() -> lc_transect
+
+nbhd %>%
+  summarize() %>%
+  mutate( Region = "Trees" ) %>%
+  get_landcover() -> lc_trees
+
+bind_rows( lc_transect, lc_trees ) %>%
+  pivot_wider( names_from = Region,
+               values_from = Proportion )
+```
+
+> **Answer:** Not very well.  The transect corridor is about 48% developed and 44% forest, but the area the trees actually occupy is about 57% developed and 36% forest.  A straight line samples whatever is between the endpoints (including a lot of suburban forest), not where the trees are.  It also hides the fact that the two types live in almost completely different landscapes.
+
+15. Is the answer sensitive to how we define a neighborhood?  Repeat question 12 using neighborhoods of 100 m and 1000 m.  What changes, and what does that tell you about choosing a neighborhood size?
+
+```{r}
+for( r in c(100, 1000) ) {
+  trees %>%
+    st_buffer( dist = r ) %>%
+    get_landcover() %>%
+    group_by( Type, Category ) %>%
+    summarize( Proportion = mean( Proportion ), .groups = "drop" ) %>%
+    pivot_wider( names_from = Type,
+                 values_from = Proportion ) %>%
+    mutate( Radius = r ) %>%
+    print()
+}
+```
+
+> **Answer:** The direction of the difference does not change, but its size does.  At 100 m, `Cultivar` neighborhoods are about 93% developed and `Native` about 86% forest; at 1000 m these drop to about 74% and 77% as the larger circles take in more of the surrounding landscape.  The neighborhood size should match the scale of the process you are asking about (e.g., how far pollinators or seed dispersers move), since the answer depends on it.
+
+16. *(If you have time)* Is there any relationship between how much `Forest` is in a tree's neighborhood and the number of seeds (`N`) it produced?  Make a plot and describe what you see.
+
+```{r}
+lc %>%
+  filter( Category == "Forest" ) %>%
+  ggplot( aes( Proportion, N ) ) +
+  geom_point( aes( color = Type ) ) +
+  geom_smooth( method = "lm", formula = y ~ x ) +
+  labs( x = "Proportion Forest within 250 m",
+        y = "Seeds (N)" )
+
+lc %>%
+  filter( Category == "Forest" ) %>%
+  summarize( r = cor( Proportion, N ) )
+```
+
+> **Answer:** There is a weak negative trend (r ≈ −0.24): trees with more forest around them produced slightly fewer seeds.  It is weak, and forest cover is almost completely confounded with `Type`, so we cannot tell whether it is the forest or something else about the two habitats.
