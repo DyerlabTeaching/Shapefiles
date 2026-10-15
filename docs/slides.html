@@ -735,15 +735,68 @@ Open the in-class activity and work through <strong>Part 1: Building Polygons</s
 </div>
 </div>
 </section>
-<section id="summarize-by-habitat" class="slide level2">
+<section id="summarize-by-habitat" class="slide level2 smaller scrollable">
 <h2>Summarize by Habitat</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href=""></a>lc <span class="sc">|&gt;</span></span>
 <span id="cb50-2"><a href=""></a>  <span class="fu">group_by</span>(Habitat, Category) <span class="sc">|&gt;</span></span>
-<span id="cb50-3"><a href=""></a>  <span class="fu">summarize</span>(<span class="at">Proportion =</span> <span class="fu">mean</span>(Proportion), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="ot">-&gt;</span> habitat_lc</span>
-<span id="cb50-4"><a href=""></a>habitat_lc <span class="sc">|&gt;</span></span>
-<span id="cb50-5"><a href=""></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> Habitat, <span class="at">values_from =</span> Proportion) <span class="sc">|&gt;</span></span>
-<span id="cb50-6"><a href=""></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb50-3"><a href=""></a>  <span class="fu">summarize</span>(<span class="at">Proportion =</span> <span class="fu">mean</span>(Proportion), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="ot">-&gt;</span> habitat_lc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="fragment">
+<p><strong>Why <code>.groups = "drop"</code>?</strong></p>
+<p><code>summarize()</code> only peels off the <em>last</em> grouping variable (<code>Category</code>), so without it the result is still grouped by <code>Habitat</code>, and <code>dplyr</code> prints a message telling you so.</p>
+<div class="fragment">
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href=""></a>lc <span class="sc">|&gt;</span></span>
+<span id="cb51-2"><a href=""></a>  <span class="fu">group_by</span>(Habitat, Category) <span class="sc">|&gt;</span></span>
+<span id="cb51-3"><a href=""></a>  <span class="fu">summarize</span>(<span class="at">Proportion =</span> <span class="fu">mean</span>(Proportion)) <span class="sc">|&gt;</span></span>
+<span id="cb51-4"><a href=""></a>  <span class="fu">group_vars</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by Habitat and Category.
+ℹ Output is grouped by Habitat.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(Habitat, Category))` for per-operation grouping
+  (`?dplyr::dplyr_by`) instead.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Habitat"</code></pre>
+</div>
+</div>
+<p>We reuse <code>habitat_lc</code> for a table, a plot, and a comparison with the transect. A leftover grouping would quietly change how any later <code>mutate()</code> or <code>summarize()</code> works on it. <code>.groups = "drop"</code> hands back a plain, ungrouped table.</p>
+</div>
+</div>
+</section>
+<section id="pivoting-the-data" class="slide level2">
+<h2>Pivoting the Data</h2>
+<p>We have the normal <code>tidy</code> output of data.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href=""></a><span class="fu">head</span>(habitat_lc)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  Habitat Category    Proportion
+  &lt;chr&gt;   &lt;chr&gt;            &lt;dbl&gt;
+1 Native  Agriculture    0.00643
+2 Native  Barren         0.00367
+3 Native  Developed      0.0527 
+4 Native  Forest         0.780  
+5 Native  Shrub/Grass    0.00213
+6 Native  Water          0.0219 </code></pre>
+</div>
+</div>
+<div class="fragment">
+<p>But would like to make a table that has columns of Categores and rows of habitat. We have to <code>pivot</code> the data frame from <strong>long</strong> to <strong>wide</strong>.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href=""></a>?pivot_wider</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</section>
+<section id="summarize-by-habitat-1" class="slide level2">
+<h2>Summarize by Habitat</h2>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href=""></a>habitat_lc <span class="sc">|&gt;</span></span>
+<span id="cb57-2"><a href=""></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> Habitat, <span class="at">values_from =</span> Proportion) <span class="sc">|&gt;</span></span>
+<span id="cb57-3"><a href=""></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <table class="caption-top">
 <thead>
@@ -805,13 +858,13 @@ Open the in-class activity and work through <strong>Part 1: Building Polygons</s
 <section id="section-7" class="slide level2">
 <h2>&nbsp;</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href=""></a><span class="fu">ggplot</span>(habitat_lc, <span class="fu">aes</span>(Category, Proportion, <span class="at">fill =</span> Habitat)) <span class="sc">+</span></span>
-<span id="cb51-2"><a href=""></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
-<span id="cb51-3"><a href=""></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
-<span id="cb51-4"><a href=""></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Average proportion of a 250 m neighborhood"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href=""></a><span class="fu">ggplot</span>(habitat_lc, <span class="fu">aes</span>(Category, Proportion, <span class="at">fill =</span> Habitat)) <span class="sc">+</span></span>
+<span id="cb58-2"><a href=""></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb58-3"><a href=""></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb58-4"><a href=""></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Average proportion of a 250 m neighborhood"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-37-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-41-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="in-class-activity-part-2" class="slide level2" data-background-color="limegreen">
 <h2>In-Class Activity: Part 2</h2>
 <p>&nbsp;</p>
@@ -838,8 +891,8 @@ Back to the in-class activity for <strong>Part 2: Land Cover</strong>.
 <p>I’ve put some shapefiles in the <a href="https://dyerlabteaching.github.io/CourseData/">course data repository</a>. These are from the Richmond City GIS Department and represent the centerlines of roads in the city as well as the zoning districts.</p>
 <p>Here are the URL’s for both of these files.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href=""></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"</span></span>
-<span id="cb52-2"><a href=""></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href=""></a>roads_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Roads.zip"</span></span>
+<span id="cb59-2"><a href=""></a>district_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningDistricts.zip"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="downloading-files-using-r" class="slide level2">
@@ -849,9 +902,9 @@ Back to the in-class activity for <strong>Part 2: Land Cover</strong>.
 <p><code>OR</code></p>
 <p>You can have <code>R</code> download the file and save it locally.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href=""></a>shp_dir <span class="ot">&lt;-</span> <span class="fu">tempdir</span>() <span class="co"># on your computer, use your project's data folder</span></span>
-<span id="cb53-2"><a href=""></a><span class="fu">download.file</span>(district_url, <span class="at">destfile =</span> <span class="fu">file.path</span>(shp_dir, <span class="st">"Districts.zip"</span>))</span>
-<span id="cb53-3"><a href=""></a><span class="fu">download.file</span>(roads_url, <span class="at">destfile =</span> <span class="fu">file.path</span>(shp_dir, <span class="st">"Roads.zip"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href=""></a>shp_dir <span class="ot">&lt;-</span> <span class="fu">tempdir</span>() <span class="co"># on your computer, use your project's data folder</span></span>
+<span id="cb60-2"><a href=""></a><span class="fu">download.file</span>(district_url, <span class="at">destfile =</span> <span class="fu">file.path</span>(shp_dir, <span class="st">"Districts.zip"</span>))</span>
+<span id="cb60-3"><a href=""></a><span class="fu">download.file</span>(roads_url, <span class="at">destfile =</span> <span class="fu">file.path</span>(shp_dir, <span class="st">"Roads.zip"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </section>
@@ -861,8 +914,8 @@ Back to the in-class activity for <strong>Part 2: Land Cover</strong>.
 <p><code>OR</code></p>
 <p>You can have <code>R</code> do it.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href=""></a><span class="fu">unzip</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Districts.zip"</span>), <span class="at">exdir =</span> shp_dir)</span>
-<span id="cb54-2"><a href=""></a><span class="fu">unzip</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Roads.zip"</span>), <span class="at">exdir =</span> shp_dir)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href=""></a><span class="fu">unzip</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Districts.zip"</span>), <span class="at">exdir =</span> shp_dir)</span>
+<span id="cb61-2"><a href=""></a><span class="fu">unzip</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Roads.zip"</span>), <span class="at">exdir =</span> shp_dir)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="file-components" class="slide level2">
@@ -877,10 +930,10 @@ Back to the in-class activity for <strong>Part 2: Land Cover</strong>.
 <h2>Loading A Shapefile</h2>
 <p>You can load it in using <code>sf::st_read()</code> and passing it the <code>.shp</code> file path to it.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href=""></a><span class="fu">st_read</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Zoning_Districts.shp"</span>)) <span class="ot">-&gt;</span> districts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href=""></a><span class="fu">st_read</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Zoning_Districts.shp"</span>)) <span class="ot">-&gt;</span> districts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpHEu8Yz/Zoning_Districts.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpM8pn0A/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -894,7 +947,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Shapefiles Convert to <code>sf</code> Objects</h2>
 <p>By default, the data associated with a vector object are put into a <code>data.frame</code> and the <code>geometry</code> object is properly created.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href=""></a><span class="fu">head</span>(districts, <span class="at">n =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href=""></a><span class="fu">head</span>(districts, <span class="at">n =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 2 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -919,7 +972,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <section id="simplifying-data" class="slide level2">
 <h2>Simplifying Data</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href=""></a><span class="fu">names</span>(districts)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href=""></a><span class="fu">names</span>(districts)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "OBJECTID"   "Name"       "Ordinance"  "OrdinanceP" "Conditiona"
  [6] "AdoptionDa" "Comment"    "CreatedBy"  "CreatedDat" "EditBy"    
@@ -930,10 +983,10 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <section id="simplifying-data-1" class="slide level2">
 <h2>Simplifying Data</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href=""></a>districts <span class="sc">|&gt;</span></span>
-<span id="cb61-2"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate) <span class="sc">|&gt;</span></span>
-<span id="cb61-3"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len) <span class="ot">-&gt;</span> districts</span>
-<span id="cb61-4"><a href=""></a><span class="fu">head</span>(districts, <span class="at">n =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href=""></a>districts <span class="sc">|&gt;</span></span>
+<span id="cb68-2"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate) <span class="sc">|&gt;</span></span>
+<span id="cb68-3"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len) <span class="ot">-&gt;</span> districts</span>
+<span id="cb68-4"><a href=""></a><span class="fu">head</span>(districts, <span class="at">n =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 1 feature and 7 fields
 Geometry type: MULTIPOLYGON
@@ -950,7 +1003,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <section id="district-codes" class="slide level2">
 <h2>District Codes</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href=""></a>districts<span class="sc">$</span>Name <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> <span class="fu">sort</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href=""></a>districts<span class="sc">$</span>Name <span class="sc">|&gt;</span> <span class="fu">unique</span>() <span class="sc">|&gt;</span> <span class="fu">sort</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "B-1"     "B-2"     "B-3"     "B-4"     "B-5"     "B-6"     "B-7"    
  [8] "CM"      "DCC"     "I"       "M-1"     "M-2"     "OS"      "R-1"    
@@ -966,22 +1019,22 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <section id="visualizing" class="slide level2">
 <h2>Visualizing</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href=""></a><span class="fu">plot</span>(districts[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href=""></a><span class="fu">plot</span>(districts[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-46-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-50-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="visualizing-overlays" class="slide level2">
 <h2>Visualizing Overlays</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(districts))</span>
-<span id="cb66-2"><a href=""></a><span class="fu">plot</span>(</span>
-<span id="cb66-3"><a href=""></a>  <span class="fu">st_geometry</span>(districts[districts<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">530</span>, ]),</span>
-<span id="cb66-4"><a href=""></a>  <span class="at">col =</span> <span class="st">'red'</span>,</span>
-<span id="cb66-5"><a href=""></a>  <span class="at">add =</span> <span class="cn">TRUE</span></span>
-<span id="cb66-6"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(districts))</span>
+<span id="cb73-2"><a href=""></a><span class="fu">plot</span>(</span>
+<span id="cb73-3"><a href=""></a>  <span class="fu">st_geometry</span>(districts[districts<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">530</span>, ]),</span>
+<span id="cb73-4"><a href=""></a>  <span class="at">col =</span> <span class="st">'red'</span>,</span>
+<span id="cb73-5"><a href=""></a>  <span class="at">add =</span> <span class="cn">TRUE</span></span>
+<span id="cb73-6"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-47-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-51-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
 <section>
 <section id="vector-operations" class="title-slide slide level1 center" data-background-color="black" data-background-image="media/contour.png" data-background-size="initial" data-background-position="right">
 <h1>Vector Operations</h1>
@@ -998,13 +1051,13 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <section id="secondary-vector-data-set" class="slide level2">
 <h2>Secondary Vector Data Set</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href=""></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="fu">file.path</span>(</span>
-<span id="cb67-2"><a href=""></a>  shp_dir,</span>
-<span id="cb67-3"><a href=""></a>  <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span></span>
-<span id="cb67-4"><a href=""></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href=""></a>road.shapefile <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="fu">file.path</span>(</span>
+<span id="cb74-2"><a href=""></a>  shp_dir,</span>
+<span id="cb74-3"><a href=""></a>  <span class="st">"Centerlines-shp/tran_Carriageway.shp"</span></span>
+<span id="cb74-4"><a href=""></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpHEu8Yz/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpM8pn0A/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -1015,7 +1068,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 </div>
 <div class="fragment">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href=""></a><span class="fu">names</span>(road.shapefile)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href=""></a><span class="fu">names</span>(road.shapefile)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "FID"        "Carriagewa" "AssetID"    "StreetType" "Functional"
  [6] "FIPS"       "LeftFromAd" "LeftToAddr" "RightFromA" "RightToAdd"
@@ -1031,7 +1084,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Check Projections</h2>
 <p><font color="red">Dyer’s First Rule: Make Sure Projections Are the Same</font></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href=""></a><span class="fu">st_crs</span>(road.shapefile) <span class="sc">==</span> <span class="fu">st_crs</span>(districts)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href=""></a><span class="fu">st_crs</span>(road.shapefile) <span class="sc">==</span> <span class="fu">st_crs</span>(districts)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
 </div>
@@ -1039,25 +1092,25 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="fragment">
 <p>If they differed, one could do something like:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href=""></a>road.shapefile <span class="sc">|&gt;</span></span>
-<span id="cb73-2"><a href=""></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="fu">st_crs</span>(districts)) <span class="ot">-&gt;</span> road.shapefile</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href=""></a>road.shapefile <span class="sc">|&gt;</span></span>
+<span id="cb80-2"><a href=""></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="fu">st_crs</span>(districts)) <span class="ot">-&gt;</span> road.shapefile</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </section>
 <section id="data-cleanup" class="slide level2">
 <h2>Data Cleanup</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href=""></a>road.shapefile <span class="sc">|&gt;</span></span>
-<span id="cb74-2"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(</span>
-<span id="cb74-3"><a href=""></a>    FullName,</span>
-<span id="cb74-4"><a href=""></a>    OneWay,</span>
-<span id="cb74-5"><a href=""></a>    StreetType,</span>
-<span id="cb74-6"><a href=""></a>    <span class="at">SpeedLimit =</span> PostedSpee,</span>
-<span id="cb74-7"><a href=""></a>    <span class="at">Length =</span> SHAPE_Leng,</span>
-<span id="cb74-8"><a href=""></a>    geometry</span>
-<span id="cb74-9"><a href=""></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb74-10"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">OneWay =</span> <span class="fu">factor</span>(OneWay), <span class="at">StreetType =</span> <span class="fu">factor</span>(StreetType)) <span class="ot">-&gt;</span> roads</span>
-<span id="cb74-11"><a href=""></a><span class="fu">summary</span>(roads)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href=""></a>road.shapefile <span class="sc">|&gt;</span></span>
+<span id="cb81-2"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(</span>
+<span id="cb81-3"><a href=""></a>    FullName,</span>
+<span id="cb81-4"><a href=""></a>    OneWay,</span>
+<span id="cb81-5"><a href=""></a>    StreetType,</span>
+<span id="cb81-6"><a href=""></a>    <span class="at">SpeedLimit =</span> PostedSpee,</span>
+<span id="cb81-7"><a href=""></a>    <span class="at">Length =</span> SHAPE_Leng,</span>
+<span id="cb81-8"><a href=""></a>    geometry</span>
+<span id="cb81-9"><a href=""></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb81-10"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">OneWay =</span> <span class="fu">factor</span>(OneWay), <span class="at">StreetType =</span> <span class="fu">factor</span>(StreetType)) <span class="ot">-&gt;</span> roads</span>
+<span id="cb81-11"><a href=""></a><span class="fu">summary</span>(roads)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   FullName          OneWay                    StreetType      SpeedLimit   
  Length:29081       1   :    2   Alley              : 3139   Min.   : 0.00  
@@ -1081,11 +1134,11 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <section id="visualizing-filter-highways-plot" class="slide level2">
 <h2>Visualizing: Filter Highways &amp; Plot</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href=""></a>roads <span class="sc">|&gt;</span></span>
-<span id="cb76-2"><a href=""></a>  <span class="fu">filter</span>(</span>
-<span id="cb76-3"><a href=""></a>    StreetType <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Highway"</span>, <span class="st">"Highway Interchange"</span>, <span class="st">"Ramp"</span>)</span>
-<span id="cb76-4"><a href=""></a>  ) <span class="ot">-&gt;</span> highways</span>
-<span id="cb76-5"><a href=""></a><span class="fu">summary</span>(highways)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href=""></a>roads <span class="sc">|&gt;</span></span>
+<span id="cb83-2"><a href=""></a>  <span class="fu">filter</span>(</span>
+<span id="cb83-3"><a href=""></a>    StreetType <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Highway"</span>, <span class="st">"Highway Interchange"</span>, <span class="st">"Ramp"</span>)</span>
+<span id="cb83-4"><a href=""></a>  ) <span class="ot">-&gt;</span> highways</span>
+<span id="cb83-5"><a href=""></a><span class="fu">summary</span>(highways)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   FullName          OneWay                  StreetType    SpeedLimit   
  Length:855         1   :  0   Alley              :  0   Min.   : 0.00  
@@ -1110,26 +1163,26 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Plot It</h2>
 <p>Let’s color this based upon SpeedLimit</p>
 
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-54-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-58-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="visualizing-a-single-entity" class="slide level2 smaller">
 <h2>Visualizing A Single Entity</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
 <h3 id="using-normal-filtering">Using Normal Filtering</h3>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href=""></a>roads <span class="sc">|&gt;</span></span>
-<span id="cb78-2"><a href=""></a>        <span class="fu">filter</span>(FullName <span class="sc">==</span> <span class="st">"Three Chopt Road"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb78-3"><a href=""></a>        <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb78-4"><a href=""></a>        <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> SpeedLimit), <span class="at">lwd =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb78-5"><a href=""></a>        <span class="fu">coord_sf</span>() <span class="sc">+</span></span>
-<span id="cb78-6"><a href=""></a>        <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href=""></a>roads <span class="sc">|&gt;</span></span>
+<span id="cb85-2"><a href=""></a>        <span class="fu">filter</span>(FullName <span class="sc">==</span> <span class="st">"Three Chopt Road"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb85-3"><a href=""></a>        <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb85-4"><a href=""></a>        <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> SpeedLimit), <span class="at">lwd =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb85-5"><a href=""></a>        <span class="fu">coord_sf</span>() <span class="sc">+</span></span>
+<span id="cb85-6"><a href=""></a>        <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div><div class="column" style="width:50%;">
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="slides_files/figure-revealjs/unnamed-chunk-56-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
+<p><img data-src="slides_files/figure-revealjs/unnamed-chunk-60-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -1140,123 +1193,123 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Intersection Plotting</h2>
 <p>Let’s grab a bit of zoning from <em>The Fan</em></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href=""></a>districts <span class="sc">|&gt;</span></span>
-<span id="cb79-2"><a href=""></a>  <span class="fu">filter</span>(OBJECTID <span class="sc">==</span> <span class="dv">368</span>) <span class="sc">|&gt;</span></span>
-<span id="cb79-3"><a href=""></a>  <span class="fu">st_buffer</span>(<span class="at">dist =</span> <span class="dv">1500</span>) <span class="sc">|&gt;</span></span>
-<span id="cb79-4"><a href=""></a>  <span class="fu">st_bbox</span>() <span class="ot">-&gt;</span> fan_bbox</span>
-<span id="cb79-5"><a href=""></a></span>
-<span id="cb79-6"><a href=""></a>districts <span class="sc">|&gt;</span></span>
-<span id="cb79-7"><a href=""></a>  <span class="fu">st_crop</span>(fan_bbox) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb86"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href=""></a>districts <span class="sc">|&gt;</span></span>
+<span id="cb86-2"><a href=""></a>  <span class="fu">filter</span>(OBJECTID <span class="sc">==</span> <span class="dv">368</span>) <span class="sc">|&gt;</span></span>
+<span id="cb86-3"><a href=""></a>  <span class="fu">st_buffer</span>(<span class="at">dist =</span> <span class="dv">1500</span>) <span class="sc">|&gt;</span></span>
+<span id="cb86-4"><a href=""></a>  <span class="fu">st_bbox</span>() <span class="ot">-&gt;</span> fan_bbox</span>
+<span id="cb86-5"><a href=""></a></span>
+<span id="cb86-6"><a href=""></a>districts <span class="sc">|&gt;</span></span>
+<span id="cb86-7"><a href=""></a>  <span class="fu">st_crop</span>(fan_bbox) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="section-9" class="slide level2">
 <h2></h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href=""></a><span class="fu">plot</span>(theFan[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb87"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href=""></a><span class="fu">plot</span>(theFan[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-58-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-62-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="zoning-categories" class="slide level2 smaller">
 <h2>Zoning Categories</h2>
 <p>26 zoning codes is too many to map. Make it a <code>factor</code> and collapse the levels with <code>fct_collapse()</code> (from <a href="https://dyerlabteaching.github.io/Factors/slides.html">Factors</a>): <em>New Level</em> = <em>Old Levels</em>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
-<span id="cb81-2"><a href=""></a>  <span class="fu">mutate</span>(</span>
-<span id="cb81-3"><a href=""></a>    <span class="at">Name =</span> <span class="fu">factor</span>(Name),</span>
-<span id="cb81-4"><a href=""></a>    <span class="at">Category =</span> <span class="fu">fct_collapse</span>(</span>
-<span id="cb81-5"><a href=""></a>      Name,</span>
-<span id="cb81-6"><a href=""></a>      <span class="at">Residential =</span> <span class="fu">c</span>(</span>
-<span id="cb81-7"><a href=""></a>        <span class="st">"R-2"</span>,</span>
-<span id="cb81-8"><a href=""></a>        <span class="st">"R-48"</span>,</span>
-<span id="cb81-9"><a href=""></a>        <span class="st">"R-5"</span>,</span>
-<span id="cb81-10"><a href=""></a>        <span class="st">"R-53"</span>,</span>
-<span id="cb81-11"><a href=""></a>        <span class="st">"R-6"</span>,</span>
-<span id="cb81-12"><a href=""></a>        <span class="st">"R-63"</span>,</span>
-<span id="cb81-13"><a href=""></a>        <span class="st">"R-7"</span>,</span>
-<span id="cb81-14"><a href=""></a>        <span class="st">"R-73"</span></span>
-<span id="cb81-15"><a href=""></a>      ),</span>
-<span id="cb81-16"><a href=""></a>      <span class="st">`</span><span class="at">Residential Office</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"RO-2"</span>, <span class="st">"RO-3"</span>),</span>
-<span id="cb81-17"><a href=""></a>      <span class="at">Business =</span> <span class="fu">c</span>(</span>
-<span id="cb81-18"><a href=""></a>        <span class="st">"B-1"</span>,</span>
-<span id="cb81-19"><a href=""></a>        <span class="st">"B-2"</span>,</span>
-<span id="cb81-20"><a href=""></a>        <span class="st">"B-3"</span>,</span>
-<span id="cb81-21"><a href=""></a>        <span class="st">"B-4"</span>,</span>
-<span id="cb81-22"><a href=""></a>        <span class="st">"B-5"</span>,</span>
-<span id="cb81-23"><a href=""></a>        <span class="st">"B-6"</span>,</span>
-<span id="cb81-24"><a href=""></a>        <span class="st">"B-7"</span></span>
-<span id="cb81-25"><a href=""></a>      ),</span>
-<span id="cb81-26"><a href=""></a>      <span class="st">`</span><span class="at">Urban Business</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(</span>
-<span id="cb81-27"><a href=""></a>        <span class="st">"UB"</span>,</span>
-<span id="cb81-28"><a href=""></a>        <span class="st">"UB-2"</span>,</span>
-<span id="cb81-29"><a href=""></a>        <span class="st">"UB-PO2"</span>,</span>
-<span id="cb81-30"><a href=""></a>        <span class="st">"UB-PO3"</span>,</span>
-<span id="cb81-31"><a href=""></a>        <span class="st">"UB-PO4"</span></span>
-<span id="cb81-32"><a href=""></a>      ),</span>
-<span id="cb81-33"><a href=""></a>      <span class="at">Industrial =</span> <span class="fu">c</span>(<span class="st">"M-1"</span>, <span class="st">"M-2"</span>),</span>
-<span id="cb81-34"><a href=""></a>      <span class="at">Institutional =</span> <span class="st">"I"</span>,</span>
-<span id="cb81-35"><a href=""></a>      <span class="st">`</span><span class="at">Transit-Oriented</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"TOD-1"</span></span>
-<span id="cb81-36"><a href=""></a>    )</span>
-<span id="cb81-37"><a href=""></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb81-38"><a href=""></a>  <span class="fu">select</span>(OBJECTID, Name, Category, <span class="fu">everything</span>()) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb88"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
+<span id="cb88-2"><a href=""></a>  <span class="fu">mutate</span>(</span>
+<span id="cb88-3"><a href=""></a>    <span class="at">Name =</span> <span class="fu">factor</span>(Name),</span>
+<span id="cb88-4"><a href=""></a>    <span class="at">Category =</span> <span class="fu">fct_collapse</span>(</span>
+<span id="cb88-5"><a href=""></a>      Name,</span>
+<span id="cb88-6"><a href=""></a>      <span class="at">Residential =</span> <span class="fu">c</span>(</span>
+<span id="cb88-7"><a href=""></a>        <span class="st">"R-2"</span>,</span>
+<span id="cb88-8"><a href=""></a>        <span class="st">"R-48"</span>,</span>
+<span id="cb88-9"><a href=""></a>        <span class="st">"R-5"</span>,</span>
+<span id="cb88-10"><a href=""></a>        <span class="st">"R-53"</span>,</span>
+<span id="cb88-11"><a href=""></a>        <span class="st">"R-6"</span>,</span>
+<span id="cb88-12"><a href=""></a>        <span class="st">"R-63"</span>,</span>
+<span id="cb88-13"><a href=""></a>        <span class="st">"R-7"</span>,</span>
+<span id="cb88-14"><a href=""></a>        <span class="st">"R-73"</span></span>
+<span id="cb88-15"><a href=""></a>      ),</span>
+<span id="cb88-16"><a href=""></a>      <span class="st">`</span><span class="at">Residential Office</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"RO-2"</span>, <span class="st">"RO-3"</span>),</span>
+<span id="cb88-17"><a href=""></a>      <span class="at">Business =</span> <span class="fu">c</span>(</span>
+<span id="cb88-18"><a href=""></a>        <span class="st">"B-1"</span>,</span>
+<span id="cb88-19"><a href=""></a>        <span class="st">"B-2"</span>,</span>
+<span id="cb88-20"><a href=""></a>        <span class="st">"B-3"</span>,</span>
+<span id="cb88-21"><a href=""></a>        <span class="st">"B-4"</span>,</span>
+<span id="cb88-22"><a href=""></a>        <span class="st">"B-5"</span>,</span>
+<span id="cb88-23"><a href=""></a>        <span class="st">"B-6"</span>,</span>
+<span id="cb88-24"><a href=""></a>        <span class="st">"B-7"</span></span>
+<span id="cb88-25"><a href=""></a>      ),</span>
+<span id="cb88-26"><a href=""></a>      <span class="st">`</span><span class="at">Urban Business</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(</span>
+<span id="cb88-27"><a href=""></a>        <span class="st">"UB"</span>,</span>
+<span id="cb88-28"><a href=""></a>        <span class="st">"UB-2"</span>,</span>
+<span id="cb88-29"><a href=""></a>        <span class="st">"UB-PO2"</span>,</span>
+<span id="cb88-30"><a href=""></a>        <span class="st">"UB-PO3"</span>,</span>
+<span id="cb88-31"><a href=""></a>        <span class="st">"UB-PO4"</span></span>
+<span id="cb88-32"><a href=""></a>      ),</span>
+<span id="cb88-33"><a href=""></a>      <span class="at">Industrial =</span> <span class="fu">c</span>(<span class="st">"M-1"</span>, <span class="st">"M-2"</span>),</span>
+<span id="cb88-34"><a href=""></a>      <span class="at">Institutional =</span> <span class="st">"I"</span>,</span>
+<span id="cb88-35"><a href=""></a>      <span class="st">`</span><span class="at">Transit-Oriented</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"TOD-1"</span></span>
+<span id="cb88-36"><a href=""></a>    )</span>
+<span id="cb88-37"><a href=""></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb88-38"><a href=""></a>  <span class="fu">select</span>(OBJECTID, Name, Category, <span class="fu">everything</span>()) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="section-10" class="slide level2">
 <h2>&nbsp;</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb82"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href=""></a><span class="fu">ggplot</span>(theFan) <span class="sc">+</span></span>
-<span id="cb82-2"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> Category)) <span class="sc">+</span></span>
-<span id="cb82-3"><a href=""></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>, <span class="at">palette =</span> <span class="st">"Set3"</span>) <span class="sc">+</span></span>
-<span id="cb82-4"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb89"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href=""></a><span class="fu">ggplot</span>(theFan) <span class="sc">+</span></span>
+<span id="cb89-2"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> Category)) <span class="sc">+</span></span>
+<span id="cb89-3"><a href=""></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">type =</span> <span class="st">"qual"</span>, <span class="at">palette =</span> <span class="st">"Set3"</span>) <span class="sc">+</span></span>
+<span id="cb89-4"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-60-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-64-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
 <section id="cropping-roads" class="slide level2">
 <h2>Cropping Roads</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href=""></a>roads <span class="sc">|&gt;</span> <span class="fu">st_crop</span>(<span class="fu">st_bbox</span>(theFan)) <span class="ot">-&gt;</span> fanRoads</span>
-<span id="cb83-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(fanRoads))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb90"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href=""></a>roads <span class="sc">|&gt;</span> <span class="fu">st_crop</span>(<span class="fu">st_bbox</span>(theFan)) <span class="ot">-&gt;</span> fanRoads</span>
+<span id="cb90-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(fanRoads))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-61-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-65-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="selecting-a-single-zone" class="slide level2">
 <h2>Selecting a Single Zone</h2>
 <p>Add an attribute to the POLYGON’s indicating if the district is that big one in the middle of the plot. Let’s plot it to see what the ID is.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb84"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
-<span id="cb84-2"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">Target =</span> <span class="fu">ifelse</span>(OBJECTID <span class="sc">==</span> <span class="dv">368</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb91"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
+<span id="cb91-2"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">Target =</span> <span class="fu">ifelse</span>(OBJECTID <span class="sc">==</span> <span class="dv">368</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) <span class="ot">-&gt;</span> theFan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="plot-it-1" class="slide level2">
 <h2>Plot it</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
-<span id="cb85-2"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb85-3"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> Target)) <span class="sc">+</span></span>
-<span id="cb85-4"><a href=""></a>  <span class="fu">geom_sf_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> OBJECTID), <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb85-5"><a href=""></a>  <span class="fu">coord_sf</span>() <span class="sc">+</span></span>
-<span id="cb85-6"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb92"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href=""></a>theFan <span class="sc">|&gt;</span></span>
+<span id="cb92-2"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb92-3"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> Target)) <span class="sc">+</span></span>
+<span id="cb92-4"><a href=""></a>  <span class="fu">geom_sf_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> OBJECTID), <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb92-5"><a href=""></a>  <span class="fu">coord_sf</span>() <span class="sc">+</span></span>
+<span id="cb92-6"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-63-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-67-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="isolate-the-district" class="slide level2">
 <h2>Isolate the District</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb86"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href=""></a>target <span class="ot">&lt;-</span> theFan[theFan<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">368</span>, ]</span>
-<span id="cb86-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(target))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb93"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href=""></a>target <span class="ot">&lt;-</span> theFan[theFan<span class="sc">$</span>OBJECTID <span class="sc">==</span> <span class="dv">368</span>, ]</span>
+<span id="cb93-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(target))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-64-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-68-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="section-11" class="slide level2">
 <h2>&nbsp;</h2>
 <p>Keep the roads that intersect the target with <code>st_filter()</code>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb87"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
-<span id="cb87-2"><a href=""></a>  <span class="fu">st_filter</span>(target) <span class="ot">-&gt;</span> targetRoads</span>
-<span id="cb87-3"><a href=""></a>targetRoads <span class="sc">|&gt;</span></span>
-<span id="cb87-4"><a href=""></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
-<span id="cb87-5"><a href=""></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName) <span class="sc">|&gt;</span></span>
-<span id="cb87-6"><a href=""></a>  <span class="fu">distinct</span>() <span class="sc">|&gt;</span></span>
-<span id="cb87-7"><a href=""></a>  <span class="fu">arrange</span>(<span class="st">`</span><span class="at">Street Name</span><span class="st">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb94"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
+<span id="cb94-2"><a href=""></a>  <span class="fu">st_filter</span>(target) <span class="ot">-&gt;</span> targetRoads</span>
+<span id="cb94-3"><a href=""></a>targetRoads <span class="sc">|&gt;</span></span>
+<span id="cb94-4"><a href=""></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb94-5"><a href=""></a>  <span class="fu">select</span>(<span class="st">`</span><span class="at">Street Name</span><span class="st">`</span> <span class="ot">=</span> FullName) <span class="sc">|&gt;</span></span>
+<span id="cb94-6"><a href=""></a>  <span class="fu">distinct</span>() <span class="sc">|&gt;</span></span>
+<span id="cb94-7"><a href=""></a>  <span class="fu">arrange</span>(<span class="st">`</span><span class="at">Street Name</span><span class="st">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Street Name
 1          Allison St
@@ -1304,23 +1357,23 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <section id="section-12" class="slide level2">
 <h2>&nbsp;</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb89"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href=""></a>targetRoads <span class="sc">|&gt;</span></span>
-<span id="cb89-2"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb89-3"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> target) <span class="sc">+</span></span>
-<span id="cb89-4"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
-<span id="cb89-5"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb96"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href=""></a>targetRoads <span class="sc">|&gt;</span></span>
+<span id="cb96-2"><a href=""></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb96-3"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> target) <span class="sc">+</span></span>
+<span id="cb96-4"><a href=""></a>  <span class="fu">geom_sf</span>(<span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb96-5"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-66-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-70-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="joining-attributes-st_join" class="slide level2">
 <h2>Joining Attributes: <code>st_join()</code></h2>
 <p>Each road segment picks up the columns of the district(s) its geometry <em>intersects</em>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb90"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
-<span id="cb90-2"><a href=""></a>  <span class="fu">st_join</span>(theFan <span class="sc">|&gt;</span> <span class="fu">select</span>(Category)) <span class="sc">|&gt;</span></span>
-<span id="cb90-3"><a href=""></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
-<span id="cb90-4"><a href=""></a>  <span class="fu">count</span>(Category, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb90-5"><a href=""></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb97"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
+<span id="cb97-2"><a href=""></a>  <span class="fu">st_join</span>(theFan <span class="sc">|&gt;</span> <span class="fu">select</span>(Category)) <span class="sc">|&gt;</span></span>
+<span id="cb97-3"><a href=""></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb97-4"><a href=""></a>  <span class="fu">count</span>(Category, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb97-5"><a href=""></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Category    n
 1      Residential 2030
@@ -1336,11 +1389,11 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Cutting Features: <code>st_intersection()</code></h2>
 <p>Keep only the <em>parts</em> that overlap; e.g., km of road inside the target.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb92"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
-<span id="cb92-2"><a href=""></a>  <span class="fu">st_intersection</span>(<span class="fu">st_geometry</span>(target)) <span class="sc">|&gt;</span></span>
-<span id="cb92-3"><a href=""></a>  <span class="fu">st_length</span>() <span class="sc">|&gt;</span></span>
-<span id="cb92-4"><a href=""></a>  <span class="fu">sum</span>() <span class="sc">|&gt;</span></span>
-<span id="cb92-5"><a href=""></a>  <span class="fu">set_units</span>(km)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb99"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href=""></a>fanRoads <span class="sc">|&gt;</span></span>
+<span id="cb99-2"><a href=""></a>  <span class="fu">st_intersection</span>(<span class="fu">st_geometry</span>(target)) <span class="sc">|&gt;</span></span>
+<span id="cb99-3"><a href=""></a>  <span class="fu">st_length</span>() <span class="sc">|&gt;</span></span>
+<span id="cb99-4"><a href=""></a>  <span class="fu">sum</span>() <span class="sc">|&gt;</span></span>
+<span id="cb99-5"><a href=""></a>  <span class="fu">set_units</span>(km)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>34.49645 [km]</code></pre>
 </div>

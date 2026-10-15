@@ -357,7 +357,21 @@ There is one row for each tree in each category (`r nrow( nbhd )` trees × 7 cat
 lc |>
   group_by(Habitat, Category) |>
   summarize(Proportion = mean(Proportion), .groups = "drop") -> habitat_lc
+```
 
+The `.groups = "drop"` is new.  When you `summarize()` data grouped by more than one variable, only the *last* grouping (`Category`) is removed, so the result would still be grouped by `Habitat`.  `dplyr` prints a message to warn you about this:
+
+```{r}
+#| message: true
+lc |>
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion)) |>
+  group_vars()
+```
+
+That leftover grouping is easy to forget, and it changes how any later `mutate()` or `summarize()` works on the data (e.g., a `sum()` would be computed within each `Habitat` instead of over the whole table).  We are going to reuse `habitat_lc` for a table, a plot, and a comparison with the transect, so `.groups = "drop"` hands it back as a plain, ungrouped table.
+
+```{r}
 habitat_lc |>
   pivot_wider(names_from = Habitat, values_from = Proportion) |>
   knitr::kable(digits = 3)

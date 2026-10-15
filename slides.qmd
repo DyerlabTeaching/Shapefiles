@@ -494,16 +494,59 @@ lc
 ```
 
 
-## Summarize by Habitat
+## Summarize by Habitat {.smaller .scrollable}
 
 ```{r}
 lc |>
   group_by(Habitat, Category) |>
   summarize(Proportion = mean(Proportion), .groups = "drop") -> habitat_lc
+```
+
+:::{.fragment}
+**Why `.groups = "drop"`?**  
+
+`summarize()` only peels off the *last* grouping variable (`Category`), so without it the result is still grouped by `Habitat`, and `dplyr` prints a message telling you so.
+
+:::{.fragment}
+```{r}
+#| message: true
+lc |>
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion)) |>
+  group_vars()
+```
+
+We reuse `habitat_lc` for a table, a plot, and a comparison with the transect.  A leftover grouping would quietly change how any later `mutate()` or `summarize()` works on it.  `.groups = "drop"` hands back a plain, ungrouped table.
+:::
+:::
+
+
+## Pivoting the Data
+
+We have the normal `tidy` output of data.
+
+```{r}
+head(habitat_lc)
+```
+
+:::{.fragment}
+
+But would like to make a table that has columns of Categores and rows of habitat.  We have to `pivot` the data frame from **long** to **wide**.
+
+```{r}
+#| eval: false 
+?pivot_wider
+```
+:::
+
+## Summarize by Habitat
+
+```{r}
 habitat_lc |>
   pivot_wider(names_from = Habitat, values_from = Proportion) |>
   knitr::kable(digits = 3)
 ```
+
 
 
 ## &nbsp;
