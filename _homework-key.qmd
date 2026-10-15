@@ -1,19 +1,19 @@
 ---
-title: "Lines, Polygons, and Shapefiles Homework Key"
+title: "Vector Data Homework Key"
 author: "Rodney J. Dyer"
 date: today
 abstract: |
-  A worked answer to the Lines, Polygons, and Shapefiles homework. We measure the 2021 NLCD land cover within 250 m of 58 maternal dogwood trees and compare the Urban, Suburban, and Native habitats. Urban neighborhoods are more developed than Suburban ones on average, but the two overlap broadly and development changes gradually with latitude, so the 37.45°N split is a convenient cut across a gradient rather than a sharp boundary.
+  A worked answer to the Vector Data homework. We measure the 2021 NLCD land cover within 250 m of 58 maternal dogwood trees and compare the Urban, Suburban, and Native habitats. Urban neighborhoods are more developed than Suburban ones on average, but the two overlap broadly and development changes gradually with latitude, so the 37.45°N split is a convenient cut across a gradient rather than a sharp boundary.
 format: dyerlab-html
 ---
 
 ```{r}
 #| message: false
 #| warning: false
-library( sf )
-library( tidyverse )
-library( knitr )
-library( kableExtra )
+library(sf)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
 ```
 
 ## Methods
@@ -23,61 +23,54 @@ library( kableExtra )
 ```{r}
 url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
 
-read_csv( url ) -> dogwoods
-
-dogwoods |>
-  st_as_sf( coords = c("Longitude", "Latitude"),
-            crs = 4326 ) |>
-  st_transform( crs = 32617 ) -> trees
+read_csv(url) |>
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326, remove = FALSE) |>
+  st_transform(crs = 32617) -> trees
 ```
 
-**Analysis.** We defined each tree's neighborhood as the area within 250 m of it and measured the proportion of each neighborhood in seven land cover categories from the 2021 National Land Cover Database using the course `get_landcover()` function. We averaged those proportions across the trees in each habitat. To see how development changes along the transect, we joined each tree's latitude back onto its land cover by `Tree`.
+**Analysis.** We defined each tree's neighborhood as the area within 250 m of it and measured the proportion of each neighborhood in seven land cover categories from the 2021 National Land Cover Database using the course `get_landcover()` function. We averaged those proportions across the trees in each habitat. To see how development changes along the transect, we kept each tree's latitude as a column when making the points.
 
 ```{r}
-source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+source("https://dyerlabteaching.github.io/Vector-Data/get_landcover.R")
 
 trees |>
-  st_buffer( dist = 250 ) -> nbhd
+  st_buffer(dist = 250) -> nbhd
 
 nbhd |>
   get_landcover() -> lc
 
 lc |>
-  group_by( Habitat, Category ) |>
-  summarize( Proportion = mean( Proportion ),
-             .groups = "drop" ) -> habitat_lc
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion), .groups = "drop") -> habitat_lc
 
 lc |>
-  filter( Mother == "Cultivar",
-          Category == "Developed" ) |>
-  left_join( dogwoods |> select( Tree, Latitude ),
-             by = "Tree" ) -> cultivar_dev
+  filter(Mother == "Cultivar", Category == "Developed") -> cultivar_dev
 ```
 
 ## Reporting values
 
 ```{r}
-n_urban    <- sum( trees$Habitat == "Urban" )
-n_suburban <- sum( trees$Habitat == "Suburban" )
-n_native   <- sum( trees$Habitat == "Native" )
+n_urban <- sum(trees$Habitat == "Urban")
+n_suburban <- sum(trees$Habitat == "Suburban")
+n_native <- sum(trees$Habitat == "Native")
 
-mean_dev <- function( habitat ) {
+mean_dev <- function(habitat) {
   habitat_lc |>
-    filter( Habitat == habitat, Category == "Developed" ) |>
-    pull( Proportion )
+    filter(Habitat == habitat, Category == "Developed") |>
+    pull(Proportion)
 }
 
-urban_dev    <- format( 100 * mean_dev( "Urban" ), digits = 2 )
-suburban_dev <- format( 100 * mean_dev( "Suburban" ), digits = 2 )
-native_dev   <- format( 100 * mean_dev( "Native" ), digits = 2 )
+urban_dev <- format(100 * mean_dev("Urban"), digits = 2)
+suburban_dev <- format(100 * mean_dev("Suburban"), digits = 2)
+native_dev <- format(100 * mean_dev("Native"), digits = 2)
 
-urban <- cultivar_dev |> filter( Habitat == "Urban" )
-suburban <- cultivar_dev |> filter( Habitat == "Suburban" )
+urban <- cultivar_dev |> filter(Habitat == "Urban")
+suburban <- cultivar_dev |> filter(Habitat == "Suburban")
 
-urban_min    <- format( 100 * min( urban$Proportion ), digits = 2 )
-n_urban_full <- sum( urban$Proportion > 0.99 )
-n_urban_low  <- sum( urban$Proportion < mean_dev( "Suburban" ) )
-n_sub_high   <- sum( suburban$Proportion > mean_dev( "Urban" ) )
+urban_min <- format(100 * min(urban$Proportion), digits = 2)
+n_urban_full <- sum(urban$Proportion > 0.99)
+n_urban_low <- sum(urban$Proportion < mean_dev("Suburban"))
+n_sub_high <- sum(suburban$Proportion > mean_dev("Urban"))
 ```
 
 ## Results
@@ -89,43 +82,39 @@ Along the transect, however, the two cultivated habitats overlap broadly (@fig-g
 ```{r}
 #| label: fig-map
 #| fig-cap: "The 250 m neighborhoods of the 58 maternal dogwood trees, colored by habitat."
-ggplot( nbhd ) +
-  geom_sf( aes( fill = Habitat ) ) +
+ggplot(nbhd) +
+  geom_sf(aes(fill = Habitat)) +
   coord_sf() +
   theme_minimal() +
-  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ```{r}
 #| label: tbl-habitat
 #| tbl-cap: "Average proportion of each land cover category within 250 m of maternal dogwood trees in each habitat."
 habitat_lc |>
-  pivot_wider( names_from = Habitat,
-               values_from = Proportion ) |>
-  kable( digits = 3 ) |>
-  kable_paper( "striped", full_width = FALSE )
+  pivot_wider(names_from = Habitat, values_from = Proportion) |>
+  kable(digits = 3) |>
+  kable_paper("striped", full_width = FALSE)
 ```
 
 ```{r}
 #| label: fig-bars
 #| fig-cap: "Average proportion of each land cover category within 250 m of maternal dogwood trees in each habitat."
-ggplot( habitat_lc,
-        aes( Category, Proportion, fill = Habitat ) ) +
-  geom_col( position = "dodge" ) +
-  coord_flip() +
-  labs( x = NULL,
-        y = "Average proportion of a 250 m neighborhood" ) +
-  theme_minimal()
+ggplot(habitat_lc, aes(Category, Proportion, fill = Habitat)) +
+      geom_col(position = "dodge") +
+      coord_flip() +
+      labs(x = NULL, y = "Average proportion of a 250 m neighborhood") +
+      theme_minimal()
 ```
 
 ```{r}
 #| label: fig-gradient
 #| fig-cap: "Proportion of developed land within 250 m of each cultivated dogwood tree, by latitude. The dashed line at 37.45°N is where the trees were split into Urban and Suburban habitats."
-ggplot( cultivar_dev,
-        aes( Latitude, Proportion, color = Habitat ) ) +
-  geom_point( size = 2 ) +
-  geom_vline( xintercept = 37.45, linetype = "dashed" ) +
-  labs( y = "Proportion Developed within 250 m" ) +
+ggplot(cultivar_dev, aes(Latitude, Proportion, color = Habitat)) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = 37.45, linetype = "dashed") +
+  labs(y = "Proportion Developed within 250 m") +
   theme_minimal()
 ```
 

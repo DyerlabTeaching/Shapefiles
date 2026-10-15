@@ -1,5 +1,5 @@
 ---
-title: "Lines, Polygons, and Shapefiles Homework"
+title: "Vector Data Homework"
 subtitle: "Is the urban–suburban divide real?"
 author: "YOUR NAME HERE"
 date: today
@@ -41,7 +41,7 @@ read_csv( url ) |>
 > **Analysis.** We defined each tree's neighborhood as the area within 250 m of it and measured the proportion of each neighborhood in seven land cover categories from the 2021 National Land Cover Database using the course `get_landcover()` function. We then averaged those proportions across the trees of each type.
 
 ```{r}
-source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
+source( "https://dyerlabteaching.github.io/Vector-Data/get_landcover.R" )
 
 trees |>
   st_buffer( dist = 250 ) |>
@@ -115,7 +115,7 @@ Use all 58 trees and the same 250 m neighborhoods to compare the three `Habitat`
 3. **A reporting-values chunk** --- `format()` the numbers you quote in the Results, and give each a short name.
 4. **One publication-quality table**, built with `kable()` and `kableExtra`, of the average proportion of each land cover category in each `Habitat` (one column per `Habitat`).
 5. **A bar chart** of the same information.
-6. **A north--south plot** of the proportion of `Developed` land cover in each *cultivated* tree's neighborhood (y-axis) against the tree's `Latitude` (x-axis), with the points colored by `Habitat`. The `Latitude` column was used up making the points, but the data you read with `read_csv()` still has it, and you can join it back on by `Tree`.[^ref-joins] Add `geom_vline( xintercept = 37.45, linetype = "dashed" )` to show where the habitats were split.
+6. **A north--south plot** of the proportion of `Developed` land cover in each *cultivated* tree's neighborhood (y-axis) against the tree's `Latitude` (x-axis), with the points colored by `Habitat`. By default, `st_as_sf()` removes the coordinate columns when it makes the points.  Add `remove = FALSE` to keep `Latitude` as a regular column; it then rides along through `st_buffer()` and `get_landcover()` like the rest of each tree's data. Add `geom_vline( xintercept = 37.45, linetype = "dashed" )` to show where the habitats were split.
 7. **Results** --- a paragraph that reports your numbers as bare inline `` `r ` `` values (no `format()` in the prose) and refers to your map, table, and figures using Quarto's cross-reference system (`#| label: tbl-...` / `#| tbl-cap:` and `#| label: fig-...` / `#| fig-cap:` in the chunks, and `@tbl-...` / `@fig-...` in the sentences).[^ref-xref]
 8. **An interpretation** --- a paragraph answering the question: *Is the divide between `Urban` and `Suburban` dogwoods a real difference in the landscape they live in?* Use your table and your north--south plot to support your answer. Think about both the averages *and* how much the individual trees in the two habitats overlap.
 
@@ -124,9 +124,7 @@ Then answer briefly, a sentence or two each:
 - What units is the `250` in `st_buffer( dist = 250 )`, and how can you tell from the `trees` object? Why did we reproject into UTM first rather than buffering the points in their original longitude/latitude (`EPSG:4326`)?
 - Your table *averages* the proportions across each tree's neighborhood. If you instead unioned all the neighborhoods in a habitat into a single polygon and got the land cover of that, how could the answer differ, and why?
 
-[^ref-narrative]: Every step is in the module [narrative](https://dyerlabteaching.github.io/Shapefiles/narrative.html) (sections *Buffers and Neighborhoods* and *Land Cover*) and in what you did in the in-class activity.
-
-[^ref-joins]: See the [Joins](https://dyerlabteaching.github.io/Joins/narrative.html) narrative.  Join onto the land cover results (a plain `data.frame`), not onto the `sf` object.
+[^ref-narrative]: Every step is in the module [narrative](https://dyerlabteaching.github.io/Vector-Data/narrative.html) (sections *Buffers and Neighborhoods* and *Land Cover*) and in what you did in the in-class activity.
 
 [^ref-xref]: Cross-referencing tables is in the [Tidyverse](https://dyerlabteaching.github.io/Tidyverse/narrative.html#cross-referencing-tables-in-text) narrative; figures work the same way with a `fig-` label and a `fig-cap`.
 
@@ -142,14 +140,14 @@ The worked example above is a model to imitate, not text to paste into your docu
 2. In the dialog, enter a title and your name, leave the engine set to **Knitr**, and click **Create**.
 3. Delete everything RStudio puts below the header (the "Quarto" boilerplate and its example chunk).
 4. Replace the header it generated with the one below.
-5. Save the file into your course project folder as `Shapefiles-Homework.qmd`.
+5. Save the file into your course project folder as `Vector-Data-Homework.qmd`.
 6. Write your content, then click **Render** to produce the `.html`. That HTML file is what you submit.
 
 ### The full YAML header
 
 ```yaml
 ---
-title: "Lines, Polygons, and Shapefiles Homework"
+title: "Vector Data Homework"
 author: "Your Name"
 date: today
 abstract: |

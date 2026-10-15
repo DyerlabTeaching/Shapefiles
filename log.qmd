@@ -8,12 +8,13 @@ format: dyerlab-html
 
 ## Entries
 
-- 2026.10.13: Started and got to [here](https://dyerlabteaching.github.io/Shapefiles/slides.html#/textual-versions-of-geometry).  We need to stop and work on incremental progress.
+- 2026.10.15: 
+- 2026.10.13: Started and got to [here](https://dyerlabteaching.github.io/Vector-Data/slides.html#/textual-versions-of-geometry).  We need to stop and work on incremental progress.
 
 
 
 
-## Copy-Edit Log — Shapefiles
+## Copy-Edit Log — Vector Data
 
 Tracks copy-editing passes over this module's `.qmd` documents. Clear-cut
 typos/grammar/spelling errors are corrected directly in the source. Items

@@ -1,5 +1,5 @@
 ---
-title: "Lines, Polygons, and Shapefiles"
+title: "Vector Data"
 format: dyerlab-narrative-html
 ---
 
@@ -15,9 +15,9 @@ format: dyerlab-narrative-html
 #| echo: false
 #| message: false
 #| warning: false
-library( sf )
-library( tidyverse )
-theme_set( theme_minimal( base_size = 16 ) )
+library(sf)
+library(tidyverse)
+theme_set(theme_minimal(base_size = 16))
 ```
 
 In the [points](https://dyerlabteaching.github.io/Spatial-Points/narrative.html) topic, every row of an `sf` object was a single coordinate.  Here we connect those coordinates into more complicated *vector* types: lines (`LINESTRING`) and polygons (`POLYGON` and `MULTIPOLYGON`).  They are still `sf` objects, so the same `st_*` functions and the same plotting routines (both built-in `plot()` and `ggplot()` with `geom_sf()`) work on them.
@@ -27,9 +27,9 @@ We will:
 - Build `LINESTRING` and `POLYGON` objects *de novo* from a `data.frame` of coordinates.
 - Make polygons from the map data that comes with `ggplot2`.
 - Use buffers, unions, and hulls to build polygons around real sampling locations.
+- Measure the land cover inside polygons we have built.
 - Import vector data from ESRI shapefiles, the format most GIS software produces.
 - Use spatial joins to select and combine features by *where* they are instead of by a key column.
-- Measure the land cover inside polygons we have built.
 
 ## Lines
 
@@ -38,11 +38,13 @@ We will:
 A line is just a sequence of points, connected in the order given.  So let's start with some points.  Here I make 10 random locations in central Virginia, five belonging to `Rodney` and five to `Sarah`, each with a bit of `Data` attached.
 
 ```{r}
-set.seed( 543 )
-df <- data.frame( id = c( rep("Rodney", 5), rep("Sarah", 5) ),
-                  Data = rnorm( 10, 42, 42 ),
-                  Longitude = rnorm( 10, -78, 1 ),
-                  Latitude = rnorm( 10, 37, 1 ) )
+set.seed(543)
+df <- data.frame(
+  id = c(rep("Rodney", 5), rep("Sarah", 5)),
+  Data = rnorm(10, 42, 42),
+  Longitude = rnorm(10, -78, 1),
+  Latitude = rnorm(10, 37, 1)
+)
 df
 ```
 
@@ -50,13 +52,13 @@ Just as before, we turn these into `POINT` objects with `st_as_sf()`, telling it
 
 ```{r}
 df |>
-  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) -> pts
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) -> pts
 pts
 ```
 
 ```{r}
-ggplot( pts ) +
-  geom_sf( aes( color = id, size = Data ) ) +
+ggplot(pts) +
+  geom_sf(aes(color = id, size = Data)) +
   coord_sf()
 ```
 
@@ -64,10 +66,10 @@ To make lines, we need to collapse each person's five points into a single row. 
 
 ```{r}
 df |>
-  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) |>
-  group_by( id ) |>
-  summarize( Data = mean( Data ) ) |>
-  st_cast( "LINESTRING" ) -> lines
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
+  group_by(id) |>
+  summarize(Data = mean(Data)) |>
+  st_cast("LINESTRING") -> lines
 lines
 ```
 
@@ -76,14 +78,14 @@ lines
 Just like points, we can plot these with the built-in `plot()` function, here selecting the `Data` column to plot,
 
 ```{r}
-plot( lines["Data"], lwd = 2 )
+plot(lines["Data"], lwd = 2)
 ```
 
 or with `ggplot()`.
 
 ```{r}
-ggplot( lines ) +
-  geom_sf( aes( color = id ), linewidth = 2 ) +
+ggplot(lines) +
+  geom_sf(aes(color = id), linewidth = 2) +
   coord_sf()
 ```
 
@@ -92,24 +94,24 @@ ggplot( lines ) +
 Because the geometry is spatially aware, we can ask spatial questions of it.  The physical length of each `LINESTRING` (in meters, since `sf` computes distances on the globe for lat/lon data):
 
 ```{r}
-st_length( lines )
+st_length(lines)
 ```
 
 The bounding box surrounding all the lines:
 
 ```{r}
-st_bbox( lines )
+st_bbox(lines)
 ```
 
 And the area of the convex hull that encloses *all* the lines.  Here I `st_union()` the two lines into one geometry, wrap a hull around it, measure its area, and use the `units` library to express it in square kilometers.
 
 ```{r}
-library( units )
+library(units)
 lines |>
   st_union() |>
   st_convex_hull() |>
   st_area() |>
-  set_units( km^2 )
+  set_units(km^2)
 ```
 
 ### Textual Versions of Geometry
@@ -125,7 +127,7 @@ lines$geometry[1] |> st_as_text()
 A polygon is simply a line whose first and last coordinates are exactly the same, so it closes upon itself.  To see this, here are our points again with the first point of each person repeated at the end of their sequence.
 
 ```{r}
-df.p <- df[ c( 1:5, 1, 6:10, 6 ), ]
+df.p <- df[c(1:5, 1, 6:10, 6), ]
 df.p
 ```
 
@@ -135,16 +137,16 @@ We make polygons the same way we made lines, just casting to `POLYGON` instead. 
 
 ```{r}
 df |>
-  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) |>
-  group_by( id ) |>
-  summarize( Data = mean( Data ) ) |>
-  st_cast( "POLYGON" ) -> polygons
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
+  group_by(id) |>
+  summarize(Data = mean(Data)) |>
+  st_cast("POLYGON") -> polygons
 polygons
 ```
 
 ```{r}
-ggplot( polygons ) +
-  geom_sf( aes( fill = Data ), alpha = 0.75 ) +
+ggplot(polygons) +
+  geom_sf(aes(fill = Data), alpha = 0.75) +
   coord_sf()
 ```
 
@@ -155,20 +157,22 @@ Since the points are random, the order they are connected in is random too, so t
 For real shapes, we can grab polygon data from `ggplot` itself.  The `map_data()` function (it uses the `maps` library) returns a `data.frame` of coordinates.  Here are the counties of Virginia.
 
 ```{r}
-library( maps )
-map_data( "county", "virginia" ) |>
-  select( Longitude = long,
-          Latitude = lat,
-          group,
-          County = subregion ) -> va_counties
-head( va_counties )
+library(maps)
+map_data("county", "virginia") |>
+  select(
+    Longitude = long,
+    Latitude = lat,
+    group,
+    County = subregion
+  ) -> va_counties
+head(va_counties)
 ```
 
 To get an idea of what these data represent, let's first plot just the points.  This shows where all the coordinates are, without the connecting lines.
 
 ```{r}
-ggplot( va_counties, aes( Longitude, Latitude ) ) +
-  geom_point( size = 0.25 ) +
+ggplot(va_counties, aes(Longitude, Latitude)) +
+  geom_point(size = 0.25) +
   coord_quickmap()
 ```
 
@@ -176,10 +180,10 @@ Each county is identified by its `group`.  If we look at a couple of counties, i
 
 ```{r}
 va_counties |>
-  filter( County %in% c("hanover", "henrico") ) |>
-  ggplot( aes( Longitude, Latitude ) ) +
-  geom_polygon( aes( fill = County ), alpha = 0.1 ) +
-  geom_point( aes( color = County ) ) +
+  filter(County %in% c("hanover", "henrico")) |>
+  ggplot(aes(Longitude, Latitude)) +
+  geom_polygon(aes(fill = County), alpha = 0.1) +
+  geom_point(aes(color = County)) +
   coord_quickmap()
 ```
 
@@ -188,11 +192,13 @@ Notice that the points on the shared border are repeated in both `County == "han
 Using `geom_polygon()` with `group = group` draws them all.
 
 ```{r}
-ggplot( va_counties, aes( Longitude, Latitude ) ) +
-  geom_polygon( aes( group = group ),
-                fill = "grey80",
-                color = "black",
-                linewidth = 0.25 ) +
+ggplot(va_counties, aes(Longitude, Latitude)) +
+  geom_polygon(
+    aes(group = group),
+    fill = "grey80",
+    color = "black",
+    linewidth = 0.25
+  ) +
   coord_quickmap()
 ```
 
@@ -200,14 +206,14 @@ We can also layer `sf` objects on top of these.  Here are the lines we made earl
 
 ```{r}
 ggplot() +
-  geom_polygon( aes( Longitude, Latitude, group = group ),
-                fill = "grey80",
-                color = "black",
-                linewidth = 0.25,
-                data = va_counties ) +
-  geom_sf( aes( color = Data ),
-           linewidth = 2,
-           data = lines ) +
+  geom_polygon(
+    aes(Longitude, Latitude, group = group),
+    fill = "grey80",
+    color = "black",
+    linewidth = 0.25,
+    data = va_counties
+  ) +
+  geom_sf(aes(color = Data), linewidth = 2, data = lines) +
   coord_sf()
 ```
 
@@ -227,10 +233,9 @@ We will start with just the `Preliminary` trees.
 ```{r}
 dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
 
-read_csv( dogwood_url ) |>
-  filter( Preliminary ) |>
-  st_as_sf( coords = c("Longitude", "Latitude"),
-            crs = 4326 ) -> trees
+read_csv(dogwood_url) |>
+  filter(Preliminary) |>
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) -> trees
 trees
 ```
 
@@ -238,13 +243,13 @@ Buffers and areas are measured in the units of the coordinate reference system, 
 
 ```{r}
 trees |>
-  st_transform( crs = 32617 ) -> trees
-st_crs( trees )$Name
+  st_transform(crs = 32617) -> trees
+st_crs(trees)$Name
 ```
 
 ```{r}
-ggplot( trees ) +
-  geom_sf( aes( color = Habitat ), size = 3 ) +
+ggplot(trees) +
+  geom_sf(aes(color = Habitat), size = 3) +
   coord_sf()
 ```
 
@@ -254,15 +259,15 @@ A *buffer* is the polygon covering everything within some distance of a feature.
 
 ```{r}
 trees |>
-  st_buffer( dist = 250 ) -> nbhd
+  st_buffer(dist = 250) -> nbhd
 nbhd
 ```
 
 Notice that each row keeps all of the tree's data; only the geometry has changed.  Each of these is `r format( round( as.numeric( st_area( nbhd[1, ] ) ) ), big.mark = "," )` m², slightly less than $\pi r^2 =$ `r format( round( pi * 250^2 ), big.mark = "," )` m², because the circle is approximated by a polygon with many short straight sides.
 
 ```{r}
-st_area( nbhd ) |>
-  head( n = 3 )
+st_area(nbhd) |>
+  head(n = 3)
 ```
 
 ### Unions
@@ -271,7 +276,7 @@ We can merge polygons together with `st_union()`.  When we `summarize()` an `sf`
 
 ```{r}
 nbhd |>
-  group_by( Habitat ) |>
+  group_by(Habitat) |>
   summarize() -> habitat_nbhd
 habitat_nbhd
 ```
@@ -280,7 +285,7 @@ Five 250 m neighborhoods would cover `r round( 5 * as.numeric( st_area( nbhd[1, 
 
 ```{r}
 habitat_nbhd |>
-  mutate( Area = set_units( st_area( habitat_nbhd ), km^2 ) )
+  mutate(Area = set_units(st_area(habitat_nbhd), km^2))
 ```
 
 ### Convex Hulls
@@ -289,11 +294,11 @@ Another way to describe the area a group of points occupies is the *convex hull*
 
 ```{r}
 trees |>
-  group_by( Habitat ) |>
+  group_by(Habitat) |>
   summarize() |>
   st_convex_hull() -> hulls
 hulls |>
-  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+  mutate(Area = set_units(st_area(hulls), km^2))
 ```
 
 ### A Transect Corridor
@@ -301,32 +306,85 @@ hulls |>
 Finally, a transect running from the northernmost to the southernmost tree.  The `st_coordinates()` function returns the coordinates as a matrix, which we can use to find the two ends.
 
 ```{r}
-y <- st_coordinates( trees )[ , "Y" ]
-trees[ y == max( y ) | y == min( y ), ] |>
+y <- st_coordinates(trees)[, "Y"]
+trees[y == max(y) | y == min(y), ] |>
   summarize() |>
-  st_cast( "LINESTRING" ) -> transect
-st_length( transect ) |>
-  set_units( km )
+  st_cast("LINESTRING") -> transect
+st_length(transect) |>
+  set_units(km)
 ```
 
 Buffering a line makes a corridor of a fixed width along it.
 
 ```{r}
 transect |>
-  st_buffer( dist = 250 ) -> corridor
+  st_buffer(dist = 250) -> corridor
 ```
 
 Here they all are together.
 
 ```{r}
 ggplot() +
-  geom_sf( aes( fill = Habitat ), alpha = 0.2, data = hulls ) +
-  geom_sf( fill = "grey60", color = NA, data = corridor ) +
-  geom_sf( aes( fill = Habitat ), data = nbhd ) +
-  geom_sf( data = trees, size = 0.5 ) +
+  geom_sf(aes(fill = Habitat), alpha = 0.2, data = hulls) +
+  geom_sf(fill = "grey60", color = NA, data = corridor) +
+  geom_sf(aes(fill = Habitat), data = nbhd) +
+  geom_sf(data = trees, size = 0.5) +
   coord_sf() +
-  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+## Land Cover
+
+A natural question about the neighborhoods we just built is: *what is in them?*  The [National Land Cover Database](https://www.mrlc.gov/data) (NLCD) classifies every 30 m × 30 m cell of the United States into one of 16 land cover classes (open water, four intensities of development, three kinds of forest, wetlands, agriculture, etc.).  Data like this, a grid of cells each holding a value, are called a *raster*, and we will learn to work with them directly in a later topic.
+
+For now, we will treat that part as a black box.  The function `get_landcover()` takes an `sf` object of polygons, finds the NLCD cells inside each one (using the 2021 NLCD for this study area), and returns the proportion of each polygon covered by each of seven broad categories: `Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`.  You can load it directly from its web address with `source()`, or download [the file](https://dyerlabteaching.github.io/Vector-Data/get_landcover.R) into your project and `source( "get_landcover.R" )`.
+
+```{r}
+source("https://dyerlabteaching.github.io/Vector-Data/get_landcover.R")
+```
+
+Let's get the land cover for each tree's neighborhood.
+
+```{r}
+lc <- get_landcover(nbhd)
+lc
+```
+
+There is one row for each tree in each category (`r nrow( nbhd )` trees × 7 categories = `r nrow( lc )` rows), and each row carries along the tree's data.  That makes it easy to summarize with normal `dplyr` routines.  Here is the average proportion of each category, for each habitat.
+
+```{r}
+lc |>
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion), .groups = "drop") -> habitat_lc
+
+habitat_lc |>
+  pivot_wider(names_from = Habitat, values_from = Proportion) |>
+  knitr::kable(digits = 3)
+```
+
+Or graphically, as a bar chart.
+
+```{r}
+ggplot(habitat_lc, aes(Category, Proportion, fill = Habitat)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(x = NULL, y = "Average proportion of a 250 m neighborhood")
+```
+
+The habitats are clearly different.  The `Urban` trees live in neighborhoods that are almost entirely developed, the `Native` trees in mostly forested ones, and the `Suburban` trees in between, with a bit more forest and wetland mixed in.
+
+The same function works on any polygons, not just buffers.  Here is the land cover in the transect corridor compared with the habitat neighborhoods.
+
+```{r}
+corridor |>
+  mutate(Habitat = "Transect") |>
+  get_landcover() |>
+  bind_rows(habitat_lc) |>
+  pivot_wider(names_from = Habitat, values_from = Proportion) |>
+  knitr::kable(digits = 3)
+```
+
+A single straight transect averages over everything between its endpoints, so it does not look like any of the places the trees actually are.
 
 ## Shapefiles
 
@@ -347,8 +405,8 @@ You can download them with your browser and move them into your project folder, 
 
 ```{r}
 shp_dir <- tempdir()
-download.file( roads_url, destfile = file.path( shp_dir, "Roads.zip" ) )
-download.file( district_url, destfile = file.path( shp_dir, "Districts.zip" ) )
+download.file(roads_url, destfile = file.path(shp_dir, "Roads.zip"))
+download.file(district_url, destfile = file.path(shp_dir, "Districts.zip"))
 ```
 
 ### Unzipping
@@ -356,8 +414,8 @@ download.file( district_url, destfile = file.path( shp_dir, "Districts.zip" ) )
 Before we can use them, we need to unzip them.  You can do this in your computer's file browser, or have `R` do it.  The `exdir` argument tells `unzip()` where to put the expanded files.
 
 ```{r}
-unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
-unzip( file.path( shp_dir, "Districts.zip" ), exdir = shp_dir )
+unzip(file.path(shp_dir, "Roads.zip"), exdir = shp_dir)
+unzip(file.path(shp_dir, "Districts.zip"), exdir = shp_dir)
 ```
 
 Depending upon how the archives were created, they may expand into a subfolder or just put a pile of files in the same folder.  For this example, there is one of each: the `Zoning_Districts.*` files are expanded directly into the folder and the roads are expanded into a subfolder named `Centerlines-shp`.
@@ -365,7 +423,7 @@ Depending upon how the archives were created, they may expand into a subfolder o
 ![The expanded shapefile components: five `Zoning_Districts` files and the `Centerlines-shp` folder.](media/flickr_50540213032.jpg){fig-alt="A file listing showing Zoning_Districts.cpg, .dbf, .prj, .shp, and .shx files, and a folder named Centerlines-shp."}
 
 ```{r}
-list.files( shp_dir, recursive = TRUE, pattern = "Zoning|tran_" )
+list.files(shp_dir, recursive = TRUE, pattern = "Zoning|tran_")
 ```
 
 ### File Components
@@ -387,14 +445,14 @@ The `.prj` file is plain text.  If you open it, you will see the full definition
 To load a shapefile, we use `st_read()` and pass it the path to the `.shp` file.  It finds the other component files on its own.
 
 ```{r}
-districts <- st_read( file.path( shp_dir, "Zoning_Districts.shp" ) )
+districts <- st_read(file.path(shp_dir, "Zoning_Districts.shp"))
 ```
 
 The result is an `sf` object.  The attributes from the `.dbf` file are put into the `data.frame` and the `geometry` column is built from the `.shp` file.  Each row here is a `MULTIPOLYGON`.
 
 ```{r}
-class( districts )
-head( districts, n = 2 )
+class(districts)
+head(districts, n = 2)
 ```
 
 Notice the projection: `NAD83 / Virginia South (ftUS)`.  If you look it up on [epsg.io](https://epsg.io/2284), it is EPSG 2284, and its units are US feet, not degrees.
@@ -404,16 +462,16 @@ Notice the projection: `NAD83 / Virginia South (ftUS)`.  If you look it up on [e
 There are a lot of columns here, many of which are bookkeeping from the GIS department.
 
 ```{r}
-names( districts )
+names(districts)
 ```
 
 Let's drop the ones we do not need.  `Shape__Are` and `Shape__Len` are the area and perimeter of each polygon, which we can always recalculate with `st_area()` and `st_perimeter()`.
 
 ```{r}
 districts |>
-  select( -Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate ) |>
-  select( -Shape__Are, -Shape__Len ) -> districts
-head( districts, n = 1 )
+  select(-Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate) |>
+  select(-Shape__Are, -Shape__Len) -> districts
+head(districts, n = 1)
 ```
 
 The `Name` column holds the zoning code for each district.
@@ -427,29 +485,34 @@ districts$Name |> unique() |> sort()
 We can plot it normally using `plot()` for `sf` objects, coloring by zoning code,
 
 ```{r}
-plot( districts["Name"] )
+plot(districts["Name"])
 ```
 
 and we can overlay one district on top of all of them by plotting just the geometry (`st_geometry()`) and then adding a second layer with `add = TRUE`.
 
 ```{r}
-plot( st_geometry( districts ) )
-plot( st_geometry( districts[ districts$OBJECTID == 530, ] ),
-      col = "red",
-      add = TRUE )
+plot(st_geometry(districts))
+plot(
+  st_geometry(districts[districts$OBJECTID == 530, ]),
+  col = "red",
+  add = TRUE
+)
 ```
 
 ## Vector Operations
 
-In the [Joins](https://dyerlabteaching.github.io/Joins/narrative.html) topic, we used primary and foreign keys to join `data.frame` objects together.  With spatial data, we can also combine data sets using their *positions*: which features intersect, touch, contain, or are within some distance of each other.  These are called *spatial joins*, and there are a lot of them.  Check out the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) for the full list.
+Spatial data sets can be combined using their *positions*: which features intersect, touch, contain, or are within some distance of each other.  These are called *spatial joins*, and there are a lot of them.  Check out the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.pdf) for the full list.
 
 ### A Second Data Set
 
 Let's load in the roads.  This shapefile was in the `Centerlines-shp` subfolder.
 
 ```{r}
-road.shapefile <- st_read( file.path( shp_dir, "Centerlines-shp/tran_Carriageway.shp" ) )
-names( road.shapefile )
+road.shapefile <- st_read(file.path(
+  shp_dir,
+  "Centerlines-shp/tran_Carriageway.shp"
+))
+names(road.shapefile)
 ```
 
 Each of the `r nrow( road.shapefile )` rows is a `LINESTRING` representing one segment of road.
@@ -459,7 +522,7 @@ Each of the `r nrow( road.shapefile )` rows is a `LINESTRING` representing one s
 Before combining two spatial data sets, you must make sure they are in the same projection[^1].
 
 ```{r}
-st_crs( road.shapefile ) == st_crs( districts )
+st_crs(road.shapefile) == st_crs(districts)
 ```
 
 These are both from the same GIS department, so they match.  If they differed, we would reproject one to match the other with `st_transform()`.
@@ -467,7 +530,7 @@ These are both from the same GIS department, so they match.  If they differed, w
 ```{r}
 #| eval: false
 road.shapefile |>
-  st_transform( crs = st_crs( districts ) ) -> road.shapefile
+  st_transform(crs = st_crs(districts)) -> road.shapefile
 ```
 
 ### Data Cleanup
@@ -476,13 +539,19 @@ Let's keep only the columns we need, rename a couple of the abbreviated ones, an
 
 ```{r}
 road.shapefile |>
-  select( FullName, OneWay, StreetType,
-          SpeedLimit = PostedSpee,
-          Length = SHAPE_Leng,
-          geometry ) |>
-  mutate( OneWay = factor( OneWay ),
-          StreetType = factor( StreetType ) ) -> roads
-summary( roads )
+        select(
+                FullName,
+                OneWay,
+                StreetType,
+                SpeedLimit = PostedSpee,
+                Length = SHAPE_Leng,
+                geometry
+        ) |>
+        mutate(
+                OneWay = factor(OneWay),
+                StreetType = factor(StreetType)
+        ) -> roads
+summary(roads)
 ```
 
 ### Filtering and Plotting Lines
@@ -491,24 +560,24 @@ Since `roads` is a `data.frame`, we can use normal `dplyr` routines on it.  Here
 
 ```{r}
 roads |>
-  filter( StreetType %in% c("Highway",
-                            "Highway Interchange",
-                            "Ramp") ) -> highways
-summary( highways )
+  filter(
+    StreetType %in% c("Highway", "Highway Interchange", "Ramp")
+  ) -> highways
+summary(highways)
 ```
 
 and plot them colored by speed limit.
 
 ```{r}
-plot( highways["SpeedLimit"], lwd = 4 )
+plot(highways["SpeedLimit"], lwd = 4)
 ```
 
 For any particular street, say *Three Chopt Road*, we can filter out the rows for it.
 
 ```{r}
 roads |>
-  filter( FullName == "Three Chopt Road" ) -> three_chopt
-nrow( three_chopt )
+  filter(FullName == "Three Chopt Road") -> three_chopt
+nrow(three_chopt)
 ```
 
 The road is made of `r nrow( three_chopt )` separate `LINESTRING` segments.  Each one is a sequence of points, which we can see as text,
@@ -520,8 +589,8 @@ three_chopt$geometry[1] |> st_as_text()
 or plot all of them together.
 
 ```{r}
-ggplot( three_chopt ) +
-  geom_sf( aes( color = SpeedLimit ), linewidth = 2 ) +
+ggplot(three_chopt) +
+  geom_sf(aes(color = SpeedLimit), linewidth = 2) +
   coord_sf()
 ```
 
@@ -531,39 +600,62 @@ Let's focus on the area around VCU and *The Fan*.  The large residential distric
 
 ```{r}
 districts |>
-  filter( OBJECTID == 368 ) |>
-  st_buffer( dist = 1500 ) |>
+  filter(OBJECTID == 368) |>
+  st_buffer(dist = 1500) |>
   st_bbox() -> fan_bbox
 
 districts |>
-  st_crop( fan_bbox ) -> theFan
-plot( theFan["Name"] )
+  st_crop(fan_bbox) -> theFan
+plot(theFan["Name"])
 ```
 
 `st_crop()` will warn you that it assumes the attributes are the same across each geometry.  That just means that when it cuts a district in half at the edge of the box, the half it keeps gets all the original attributes, which is what we want.
 
-### Adding Auxiliary Data
+### Zoning Categories
 
-The zoning codes are not very descriptive.  There is a csv file with a translation in the course data repository, and we can `left_join()` it to `theFan` by the `Name` column as it is read in[^2].
+The `Name` column of the districts holds Richmond's zoning codes, and there are a lot of them.  Since these are categories, let's make the column a `factor` and look at its levels.
 
 ```{r}
-zone_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"
-
 theFan |>
-  left_join( read_csv( zone_url ),
-             by = "Name" ) |>
-  mutate( Category = factor( Category ) ) |>
-  select( OBJECTID,
-          Name,
-          Category,
-          everything() ) -> theFan
+  mutate(Name = factor(Name)) -> theFan
+levels(theFan$Name)
 ```
 
+That is `r nlevels( theFan$Name )` different codes in this small area alone, which is far too many to tell apart by color on a map.  But the codes have a structure: each one starts with a prefix for its general type of use (`R` for residential, `B` for business, `M` for industrial, etc.), and the rest of the code is detail we do not need here.  In the [Factors](https://dyerlabteaching.github.io/Factors/slides.html) topic, we used `fct_collapse()` from `forcats` to combine several levels into one.  We give it each new level, with the vector of old levels that go into it.
+
 ```{r}
-ggplot( theFan ) +
-  geom_sf( aes( fill = Category ) ) +
-  scale_fill_brewer( type = "qual",
-                     palette = "Set3" )
+theFan |>
+  mutate(
+    Category = fct_collapse(
+      Name,
+      Residential = c(
+        "R-2",
+        "R-48",
+        "R-5",
+        "R-53",
+        "R-6",
+        "R-63",
+        "R-7",
+        "R-73"
+      ),
+      `Residential Office` = c("RO-2", "RO-3"),
+      Business = c("B-1", "B-2", "B-3", "B-4", "B-5", "B-6", "B-7"),
+      `Urban Business` = c("UB", "UB-2", "UB-PO2", "UB-PO3", "UB-PO4"),
+      Industrial = c("M-1", "M-2"),
+      Institutional = "I",
+      `Transit-Oriented` = "TOD-1"
+    )
+  ) |>
+  select(OBJECTID, Name, Category, everything()) -> theFan
+levels(theFan$Category)
+```
+
+The new level names with spaces in them need backticks, just like column names with spaces.  Any level we do not mention is left as it is, so if you crop a different part of the city and new codes show up, they will appear as their own categories (add `other_level = "Other"` to lump them all together instead).
+
+```{r}
+ggplot(theFan) +
+  geom_sf(aes(fill = Category)) +
+  scale_fill_brewer(type = "qual", palette = "Set3")
 ```
 
 Notice that `geom_sf()` draws the axes in longitude and latitude, even though the data are in feet.  It converts the coordinates for display without changing the data.
@@ -574,9 +666,9 @@ We can crop the roads to the same box.
 
 ```{r}
 roads |>
-  st_crop( st_bbox( theFan ) ) -> fanRoads
-plot( st_geometry( theFan ), lwd = 2 )
-plot( st_geometry( fanRoads ), col = "blue", add = TRUE )
+  st_crop(st_bbox(theFan)) -> fanRoads
+plot(st_geometry(theFan), lwd = 2)
+plot(st_geometry(fanRoads), col = "blue", add = TRUE)
 ```
 
 ### Selecting a Single Zone
@@ -585,20 +677,20 @@ Let's mark the target district in `theFan` with a new column, and plot it with e
 
 ```{r}
 theFan |>
-  mutate( Target = OBJECTID == 368 ) -> theFan
+  mutate(Target = OBJECTID == 368) -> theFan
 
 theFan |>
   ggplot() +
-  geom_sf( aes( fill = Target ) ) +
-  geom_sf_text( aes( label = OBJECTID ), size = 3 ) +
+  geom_sf(aes(fill = Target)) +
+  geom_sf_text(aes(label = OBJECTID), size = 3) +
   coord_sf()
 ```
 
 And then pull it out as its own `sf` object.
 
 ```{r}
-target <- theFan |> filter( OBJECTID == 368 )
-plot( st_geometry( target ) )
+target <- theFan |> filter(OBJECTID == 368)
+plot(st_geometry(target))
 ```
 
 ### Spatial Joins
@@ -607,8 +699,8 @@ Now for the question we have been building toward: *which roads cross this distr
 
 ```{r}
 fanRoads |>
-  st_filter( target ) -> targetRoads
-nrow( targetRoads )
+  st_filter(target) -> targetRoads
+nrow(targetRoads)
 ```
 
 Those are `r nrow( targetRoads )` road segments.  To get the street names, we drop the geometry with `st_drop_geometry()` (otherwise the `geometry` column comes along for the ride) and use normal `dplyr` routines.
@@ -616,31 +708,31 @@ Those are `r nrow( targetRoads )` road segments.  To get the street names, we dr
 ```{r}
 targetRoads |>
   st_drop_geometry() |>
-  select( `Street Name` = FullName ) |>
+  select(`Street Name` = FullName) |>
   distinct() |>
-  arrange( `Street Name` )
+  arrange(`Street Name`)
 ```
 
 And we can plot them on top of the districts, with the target highlighted.
 
 ```{r}
 ggplot() +
-  geom_sf( aes( fill = Target ), data = theFan ) +
-  geom_sf( color = "darkgreen", data = targetRoads ) +
-  scale_fill_manual( values = c("grey90", "dodgerblue3") )
+  geom_sf(aes(fill = Target), data = theFan) +
+  geom_sf(color = "darkgreen", data = targetRoads) +
+  scale_fill_manual(values = c("grey90", "dodgerblue3"))
 ```
 
 To use a different relationship, pass it as the `.predicate`.  For example, `st_filter( fanRoads, target, .predicate = st_within )` would keep only the road segments that lie *completely* inside the district.
 
-`st_filter()` only keeps or drops rows.  To bring the *data* from one layer over to another, use `st_join()`.  It works like `left_join()`, but instead of matching on a key column, it matches rows whose geometries intersect.  Here every road segment picks up the zoning `Category` of the district(s) it touches.
+`st_filter()` only keeps or drops rows.  To bring the *data* from one layer over to another, use `st_join()`.  It keeps every row of the first layer and adds the columns of whichever features in the second layer it intersects; it is the geometries, not a shared column, that decide which rows go together.  Here every road segment picks up the zoning `Category` of the district(s) it touches.
 
 ```{r}
 fanRoads |>
-  st_join( theFan |> select( Category ) ) -> roadZones
+  st_join(theFan |> select(Category)) -> roadZones
 
 roadZones |>
   st_drop_geometry() |>
-  count( Category, sort = TRUE )
+  count(Category, sort = TRUE)
 ```
 
 A segment that crosses from one district into another touches both, so it shows up once for each.
@@ -649,74 +741,14 @@ Finally, `st_intersection()` cuts one layer by another, keeping only the parts t
 
 ```{r}
 fanRoads |>
-  st_intersection( st_geometry( target ) ) |>
+  st_intersection(st_geometry(target)) |>
   st_length() |>
   sum() |>
-  set_units( km )
+  set_units(km)
 ```
 
 (The warning is the same one we saw with `st_crop()`: the pieces that are kept inherit the attributes of the segment they were cut from.)
 
 Go check out the `sf` cheatsheet for more spatial joins and options.
 
-## Land Cover
-
-Back to the dogwoods.  A natural question about the neighborhoods we built is: *what is in them?*  The [National Land Cover Database](https://www.mrlc.gov/data) (NLCD) classifies every 30 m × 30 m cell of the United States into one of 16 land cover classes (open water, four intensities of development, three kinds of forest, wetlands, agriculture, etc.).  Data like this, a grid of cells each holding a value, are called a *raster*, and we will learn to work with them directly in a later topic.
-
-For now, we will treat that part as a black box.  The function `get_landcover()` takes an `sf` object of polygons, finds the NLCD cells inside each one (using the 2021 NLCD for this study area), and returns the proportion of each polygon covered by each of seven broad categories: `Water`, `Developed`, `Barren`, `Forest`, `Shrub/Grass`, `Agriculture`, and `Wetland`.  You can load it directly from its web address with `source()`, or download [the file](https://dyerlabteaching.github.io/Shapefiles/get_landcover.R) into your project and `source( "get_landcover.R" )`.
-
-```{r}
-source( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R" )
-```
-
-Let's get the land cover for each tree's neighborhood.
-
-```{r}
-lc <- get_landcover( nbhd )
-lc
-```
-
-There is one row for each tree in each category (`r nrow( nbhd )` trees × 7 categories = `r nrow( lc )` rows), and each row carries along the tree's data.  That makes it easy to summarize with normal `dplyr` routines.  Here is the average proportion of each category, for each habitat.
-
-```{r}
-lc |>
-  group_by( Habitat, Category ) |>
-  summarize( Proportion = mean( Proportion ),
-             .groups = "drop" ) -> habitat_lc
-
-habitat_lc |>
-  pivot_wider( names_from = Habitat,
-               values_from = Proportion ) |>
-  knitr::kable( digits = 3 )
-```
-
-Or graphically, as a bar chart.
-
-```{r}
-ggplot( habitat_lc,
-        aes( Category, Proportion, fill = Habitat ) ) +
-  geom_col( position = "dodge" ) +
-  coord_flip() +
-  labs( x = NULL,
-        y = "Average proportion of a 250 m neighborhood" )
-```
-
-The habitats are clearly different.  The `Urban` trees live in neighborhoods that are almost entirely developed, the `Native` trees in mostly forested ones, and the `Suburban` trees in between, with a bit more forest and wetland mixed in.
-
-The same function works on any polygons, not just buffers.  Here is the land cover in the transect corridor compared with the habitat neighborhoods.
-
-```{r}
-corridor |>
-  mutate( Habitat = "Transect" ) |>
-  get_landcover() |>
-  bind_rows( habitat_lc ) |>
-  pivot_wider( names_from = Habitat,
-               values_from = Proportion ) |>
-  knitr::kable( digits = 3 )
-```
-
-A single straight transect averages over everything between its endpoints, so it does not look like any of the places the trees actually are.
-
 [^1]: **Dyer's First Law**: Reproject then forget about it!
-
-[^2]: You should be careful when you use joins on `sf` objects.  If your `sf` object is on the right side (see discussion of joins [here](https://dyerlabteaching.github.io/Joins/narrative.html)) then the result will not be an `sf` object and you'll have to coerce it back into one again.  It always adopts the characteristics of the left object.

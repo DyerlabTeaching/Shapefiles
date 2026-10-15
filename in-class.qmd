@@ -1,5 +1,5 @@
 ---
-title: "In Class Activity - Lines, Polygons, and Shapefiles"
+title: "In Class Activity - Vector Data"
 format: dyerlab-html
 ---
 
@@ -101,7 +101,7 @@ The function is in its own file.  This chunk downloads it into your project fold
 
 ```{r}
 if( !file.exists( "get_landcover.R" ) ) {
-  download.file( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R",
+  download.file( "https://dyerlabteaching.github.io/Vector-Data/get_landcover.R",
                  destfile = "get_landcover.R" )
 }
 source( "get_landcover.R" )

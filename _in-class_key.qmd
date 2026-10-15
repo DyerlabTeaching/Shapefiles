@@ -1,5 +1,5 @@
 ---
-title: "In Class Activity - Lines, Polygons, and Shapefiles (Key)"
+title: "In Class Activity - Vector Data (Key)"
 format: dyerlab-html
 ---
 
@@ -7,9 +7,9 @@ This activity focuses on building and using `LINESTRING` and `POLYGON` objects i
 
 ```{r}
 #| message: false
-library( sf )
-library( tidyverse )
-library( units )
+library(sf)
+library(tidyverse)
+library(units)
 ```
 
 ## The Data
@@ -42,10 +42,9 @@ Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.p
 1. Read in the data, keep only the `Preliminary` trees, and convert them into an `sf` object of `POINT`s.  Make sure you give it the correct `crs`.
 
 ```{r}
-read_csv( url ) |>
-  filter( Preliminary ) |>
-  st_as_sf( coords = c("Longitude", "Latitude"),
-            crs = 4326 ) -> trees
+read_csv(url) |>
+  filter(Preliminary) |>
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) -> trees
 trees
 ```
 
@@ -53,15 +52,15 @@ trees
 
 ```{r}
 trees |>
-  st_transform( crs = 32617 ) -> trees
-st_crs( trees )$Name
+  st_transform(crs = 32617) -> trees
+st_crs(trees)$Name
 ```
 
 3. Make a plot of the trees, colored by `Habitat`.
 
 ```{r}
-ggplot( trees ) +
-  geom_sf( aes( color = Habitat ), size = 3 ) +
+ggplot(trees) +
+  geom_sf(aes(color = Habitat), size = 3) +
   coord_sf()
 ```
 
@@ -69,8 +68,8 @@ ggplot( trees ) +
 
 ```{r}
 trees |>
-  st_buffer( dist = 500 ) -> nbhd
-st_area( nbhd[1, ] )
+  st_buffer(dist = 500) -> nbhd
+st_area(nbhd[1, ])
 pi * 500^2
 ```
 
@@ -80,10 +79,10 @@ pi * 500^2
 
 ```{r}
 nbhd |>
-  group_by( Habitat ) |>
+  group_by(Habitat) |>
   summarize() -> habitat_nbhd
 habitat_nbhd |>
-  mutate( Area = set_units( st_area( habitat_nbhd ), km^2 ) )
+  mutate(Area = set_units(st_area(habitat_nbhd), km^2))
 5 * pi * 500^2 / 1e6
 ```
 
@@ -93,15 +92,15 @@ habitat_nbhd |>
 
 ```{r}
 trees |>
-  group_by( Habitat ) |>
+  group_by(Habitat) |>
   summarize() |>
   st_convex_hull() -> hulls
 hulls |>
-  mutate( Area = set_units( st_area( hulls ), km^2 ) )
+  mutate(Area = set_units(st_area(hulls), km^2))
 
 ggplot() +
-  geom_sf( aes( fill = Habitat ), alpha = 0.25, data = hulls ) +
-  geom_sf( aes( color = Habitat ), data = trees ) +
+  geom_sf(aes(fill = Habitat), alpha = 0.25, data = hulls) +
+  geom_sf(aes(color = Habitat), data = trees) +
   coord_sf()
 ```
 
@@ -110,15 +109,15 @@ ggplot() +
 7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates).  What are the `Tree` IDs at each end, and how long is it in km?
 
 ```{r}
-y <- st_coordinates( trees )[ , "Y" ]
-ends <- trees[ y == max( y ) | y == min( y ), ]
+y <- st_coordinates(trees)[, "Y"]
+ends <- trees[y == max(y) | y == min(y), ]
 ends$Tree
 
 ends |>
   summarize() |>
-  st_cast( "LINESTRING" ) -> transect
-st_length( transect ) |>
-  set_units( km )
+  st_cast("LINESTRING") -> transect
+st_length(transect) |>
+  set_units(km)
 ```
 
 > **Answer:** The ends are `105UWP` (north, `Urban`) and `361PWP` (south, `Native`), and the transect is about 15.4 km long.
@@ -126,11 +125,11 @@ st_length( transect ) |>
 8. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
 
 ```{r}
-trees[ order( y ), ] |>
-  summarize( do_union = FALSE ) |>
-  st_cast( "LINESTRING" ) -> zigzag
-st_length( zigzag ) |>
-  set_units( km )
+trees[order(y), ] |>
+  summarize(do_union = FALSE) |>
+  st_cast("LINESTRING") -> zigzag
+st_length(zigzag) |>
+  set_units(km)
 ```
 
 > **Answer:** About 26.7 km.  A `LINESTRING` connects points in the order given, so sorting only by latitude makes the line zig-zag east and west between trees at similar latitudes (the suburban trees are spread out east to west).  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
@@ -139,15 +138,15 @@ st_length( zigzag ) |>
 
 ```{r}
 transect |>
-  st_buffer( dist = 500 ) -> corridor
+  st_buffer(dist = 500) -> corridor
 
 ggplot() +
-  geom_sf( aes( fill = Habitat ), alpha = 0.2, data = hulls ) +
-  geom_sf( fill = "grey60", color = NA, data = corridor ) +
-  geom_sf( aes( fill = Habitat ), data = nbhd ) +
-  geom_sf( data = trees, size = 0.5 ) +
+  geom_sf(aes(fill = Habitat), alpha = 0.2, data = hulls) +
+  geom_sf(fill = "grey60", color = NA, data = corridor) +
+  geom_sf(aes(fill = Habitat), data = nbhd) +
+  geom_sf(data = trees, size = 0.5) +
   coord_sf() +
-  theme( axis.text.x = element_text( angle = 45, hjust = 1 ) )
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ## Part 2: Land Cover
@@ -157,19 +156,21 @@ The land cover data are from the 2021 [National Land Cover Database](https://www
 The function is in its own file.  This chunk downloads it into your project folder (once) and loads it.  It needs the `terra` library to be installed (`install.packages("terra")`), though you do not need to load it.
 
 ```{r}
-if( !file.exists( "get_landcover.R" ) ) {
-  download.file( "https://dyerlabteaching.github.io/Shapefiles/get_landcover.R",
-                 destfile = "get_landcover.R" )
+if (!file.exists("get_landcover.R")) {
+  download.file(
+    "https://dyerlabteaching.github.io/Vector-Data/get_landcover.R",
+    destfile = "get_landcover.R"
+  )
 }
-source( "get_landcover.R" )
+source("get_landcover.R")
 ```
 
 10. Get the land cover for each tree's 500 m neighborhood.  How many rows does the result have, and why that many?
 
 ```{r}
-lc <- get_landcover( nbhd )
-nrow( lc )
-head( lc )
+lc <- get_landcover(nbhd)
+nrow(lc)
+head(lc)
 ```
 
 > **Answer:** 105 rows: one for each of the 15 trees in each of the 7 land cover categories (15 × 7 = 105).
@@ -178,13 +179,12 @@ head( lc )
 
 ```{r}
 lc |>
-  group_by( Habitat, Category ) |>
-  summarize( Proportion = mean( Proportion ), .groups = "drop" ) -> habitat_lc
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion), .groups = "drop") -> habitat_lc
 
 habitat_lc |>
-  pivot_wider( names_from = Habitat,
-               values_from = Proportion ) |>
-  knitr::kable( digits = 3 )
+  pivot_wider(names_from = Habitat, values_from = Proportion) |>
+  knitr::kable(digits = 3)
 ```
 
 > **Answer:** `Urban` neighborhoods are about 96% developed, `Suburban` about 71% developed with 16% wetland and 9% forest, and `Native` about 81% forest.
@@ -192,24 +192,21 @@ habitat_lc |>
 12. Make a bar chart of the same information.
 
 ```{r}
-ggplot( habitat_lc,
-        aes( Category, Proportion, fill = Habitat ) ) +
-  geom_col( position = "dodge" ) +
+ggplot(habitat_lc, aes(Category, Proportion, fill = Habitat)) +
+  geom_col(position = "dodge") +
   coord_flip() +
-  labs( x = NULL,
-        y = "Average proportion of a 500 m neighborhood" )
+  labs(x = NULL, y = "Average proportion of a 500 m neighborhood")
 ```
 
 13. Get the land cover for the transect corridor and add it to your table as another column.  Does the transect represent the landscape the trees actually live in?
 
 ```{r}
 corridor |>
-  mutate( Habitat = "Transect" ) |>
+  mutate(Habitat = "Transect") |>
   get_landcover() |>
-  bind_rows( habitat_lc ) |>
-  pivot_wider( names_from = Habitat,
-               values_from = Proportion ) |>
-  knitr::kable( digits = 3 )
+  bind_rows(habitat_lc) |>
+  pivot_wider(names_from = Habitat, values_from = Proportion) |>
+  knitr::kable(digits = 3)
 ```
 
 > **Answer:** No.  The corridor is about 58% developed and 29% forest, which does not look like any of the three habitats.  A straight line averages over everything between its endpoints rather than sampling where the trees are, and it hides how different the three habitats are.
@@ -218,14 +215,15 @@ corridor |>
 
 ```{r}
 trees |>
-  st_buffer( dist = 250 ) |>
+  st_buffer(dist = 250) |>
   get_landcover() |>
-  group_by( Habitat, Category ) |>
-  summarize( P250 = mean( Proportion ), .groups = "drop" ) |>
-  left_join( habitat_lc |> rename( P500 = Proportion ),
-             by = c("Habitat", "Category") ) |>
-  filter( Category %in% c("Developed", "Forest", "Wetland") ) |>
-  knitr::kable( digits = 3 )
+  group_by(Habitat, Category) |>
+  summarize(Proportion = mean(Proportion), .groups = "drop") |>
+  mutate(Size = "250 m") |>
+  bind_rows(habitat_lc |> mutate(Size = "500 m")) |>
+  filter(Category %in% c("Developed", "Forest", "Wetland")) |>
+  pivot_wider(names_from = Size, values_from = Proportion) |>
+  knitr::kable(digits = 3)
 ```
 
 > **Answer:** The overall picture does not change: `Urban` is mostly developed, `Native` mostly forest, and `Suburban` in between at both sizes.  The proportions shift by a few percent.  `Native` changes the most: wetland drops from about 13% to 9% and forest rises from 78% to 81%, suggesting these trees sit close to a creek or wetland that makes up less of a larger circle.  The neighborhood size should match the scale of the process being studied (e.g., how far pollinators move), because the numbers depend on it.

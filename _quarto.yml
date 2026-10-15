@@ -1,5 +1,5 @@
 project:
-  title: "Lines, Polygons, and Shapefiles"
+  title: "Vector Data"
   output-dir: docs
   pre-render: _extensions/dyerlab/update-extension.sh
   resources:
