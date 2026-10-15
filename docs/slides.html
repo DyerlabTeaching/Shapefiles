@@ -190,6 +190,9 @@
       margin-right: 0; 
     }
   </style>
+  <script src="slides_files/libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="slides_files/libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="slides_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 </head>
 <body class="quarto-light">
   <div class="reveal">
@@ -425,6 +428,19 @@ Geodetic CRS:  WGS 84
 <section id="polygon-de-novo-creation" class="slide level2">
 <h2>Polygon <em>de novo</em> Creation</h2>
 <p>Use <code>st_cast()</code> as before to make groups of points into a polygon.</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Load&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Convert&lt;/div&gt;")) --&gt; C(("&lt;div style='width:5em;text-align:center'&gt;Data&lt;/div&gt;")) --&gt; D(("&lt;div style='width:5em;text-align:center'&gt;Cast&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
 <div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href=""></a>df <span class="sc">|&gt;</span></span>
@@ -462,10 +478,24 @@ Geodetic CRS:  WGS 84
 <span id="cb23-4"><a href=""></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">vjust =</span> <span class="fl">0.5</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-16-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-17-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="polygons-from-data-frames" class="slide level2">
 <h2>Polygons From Data Frames</h2>
 <p>The <code>ggplot</code> library provides access to map data as well.</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Load&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Rename&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href=""></a><span class="fu">map_data</span>(<span class="st">"county"</span>, <span class="st">"virginia"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb24-2"><a href=""></a>  <span class="fu">select</span>(</span>
@@ -474,6 +504,7 @@ Geodetic CRS:  WGS 84
 <span id="cb24-5"><a href=""></a>    group,</span>
 <span id="cb24-6"><a href=""></a>    <span class="at">County =</span> subregion</span>
 <span id="cb24-7"><a href=""></a>  ) <span class="ot">-&gt;</span> va_counties</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </div>
 </section>
 <section id="polygons-from-data-frames-1" class="slide level2">
@@ -499,7 +530,7 @@ Geodetic CRS:  WGS 84
 <span id="cb27-3"><a href=""></a>  <span class="fu">coord_quickmap</span>() <span class="co"># roughly spherical projection</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-19-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-21-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
 <section id="section-3" class="slide level2">
 <h2></h2>
 <div class="cell" data-layout-align="center">
@@ -511,7 +542,7 @@ Geodetic CRS:  WGS 84
 <span id="cb28-6"><a href=""></a>  <span class="fu">coord_quickmap</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-20-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-22-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="section-4" class="slide level2">
 <h2></h2>
 <div class="cell" data-layout-align="center">
@@ -525,7 +556,7 @@ Geodetic CRS:  WGS 84
 <span id="cb29-8"><a href=""></a>  <span class="fu">coord_quickmap</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-21-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-23-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="combining-polygons-and-sf-objects" class="slide level2">
 <h2>Combining polygons and <code>sf</code> objects</h2>
 <div class="cell" data-layout-align="center">
@@ -541,7 +572,7 @@ Geodetic CRS:  WGS 84
 <span id="cb30-10"><a href=""></a>  <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-22-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-24-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
 <section>
 <section id="buffers-neighborhoods" class="title-slide slide level1 center" data-background-color="black" data-background-image="media/contour.png" data-background-size="initial" data-background-position="right">
 <h1>Buffers &amp; Neighborhoods</h1>
@@ -550,6 +581,20 @@ Geodetic CRS:  WGS 84
 <section id="dogwood-trees" class="slide level2">
 <h2>Dogwood Trees</h2>
 <p>Maternal dogwood trees sampled from the city of Richmond south to Pocahontas State Park. We start with the 15 <code>Preliminary</code> trees (5 per <code>Habitat</code>), sorted south to north.</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Load&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Filter&lt;/div&gt;")) --&gt; C(("&lt;div style='width:5em;text-align:center'&gt;Sort&lt;/div&gt;")) --&gt; D(("&lt;div style='width:5em;text-align:center'&gt;Convert&lt;/div&gt;")) --&gt; E(("&lt;div style='width:5em;text-align:center'&gt;Project&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href=""></a>dogwood_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"</span></span>
 <span id="cb31-2"><a href=""></a><span class="fu">read_csv</span>(dogwood_url) <span class="sc">|&gt;</span></span>
@@ -558,6 +603,7 @@ Geodetic CRS:  WGS 84
 <span id="cb31-5"><a href=""></a>  <span class="fu">arrange</span>(Latitude, Longitude) <span class="sc">|&gt;</span></span>
 <span id="cb31-6"><a href=""></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"Longitude"</span>, <span class="st">"Latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>) <span class="sc">|&gt;</span></span>
 <span id="cb31-7"><a href=""></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">32617</span>) <span class="ot">-&gt;</span> trees</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </div>
 <div class="fragment">
 <p><font color="red">Buffers &amp; areas use the CRS units: reproject to meters (UTM 17N) first!</font></p>
@@ -600,7 +646,7 @@ Projected CRS: WGS 84 / UTM zone 17N
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href=""></a><span class="fu">ggplot</span>(trees) <span class="sc">+</span> <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> Habitat), <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span> <span class="fu">coord_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-25-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-28-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="buffers" class="slide level2">
 <h2>Buffers</h2>
 <p>Everything within some distance of a feature. Buffering a <code>POINT</code> makes a <code>POLYGON</code>.</p>
@@ -626,6 +672,20 @@ Projected CRS: WGS 84 / UTM zone 17N
 <section id="unions" class="slide level2">
 <h2>Unions</h2>
 <p><code>summarize()</code> on an <code>sf</code> object unions the geometries in each group.</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Group&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Union&lt;/div&gt;")) --&gt; C(("&lt;div style='width:5em;text-align:center'&gt;Measure&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href=""></a>nbhd <span class="sc">|&gt;</span></span>
 <span id="cb39-2"><a href=""></a>  <span class="fu">group_by</span>(Habitat) <span class="sc">|&gt;</span></span>
@@ -638,6 +698,7 @@ Projected CRS: WGS 84 / UTM zone 17N
 [1] 0.9470074 0.9303691 0.9812992</code></pre>
 </div>
 </div>
+</div>
 <div class="fragment">
 <p>Five buffers would be 0.98 km²; overlaps are only counted once.</p>
 </div>
@@ -645,6 +706,20 @@ Projected CRS: WGS 84 / UTM zone 17N
 <section id="convex-hulls" class="slide level2">
 <h2>Convex Hulls</h2>
 <p>The smallest convex polygon around a set of points (a rubber band).</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Group&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Union&lt;/div&gt;")) --&gt; C(("&lt;div style='width:5em;text-align:center'&gt;Hull&lt;/div&gt;")) --&gt; D(("&lt;div style='width:5em;text-align:center'&gt;Measure&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href=""></a>trees <span class="sc">|&gt;</span></span>
 <span id="cb41-2"><a href=""></a>  <span class="fu">group_by</span>(Habitat) <span class="sc">|&gt;</span></span>
@@ -654,6 +729,7 @@ Projected CRS: WGS 84 / UTM zone 17N
 <div class="cell-output cell-output-stdout">
 <pre><code>Units: [km^2]
 [1] 0.8878745 4.5659473 3.0616005</code></pre>
+</div>
 </div>
 </div>
 </section>
@@ -688,7 +764,7 @@ Projected CRS: WGS 84 / UTM zone 17N
 <section id="section-6" class="slide level2">
 <h2>&nbsp;</h2>
 
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-33-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-38-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="in-class-activity-part-1" class="slide level2" data-background-color="limegreen">
 <h2>In-Class Activity: Part 1</h2>
 <p>&nbsp;</p>
@@ -864,7 +940,7 @@ Open the in-class activity and work through <strong>Part 1: Building Polygons</s
 <span id="cb58-4"><a href=""></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Average proportion of a 250 m neighborhood"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-41-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-46-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="in-class-activity-part-2" class="slide level2" data-background-color="limegreen">
 <h2>In-Class Activity: Part 2</h2>
 <p>&nbsp;</p>
@@ -933,7 +1009,7 @@ Back to the in-class activity for <strong>Part 2: Land Cover</strong>.
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href=""></a><span class="fu">st_read</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Zoning_Districts.shp"</span>)) <span class="ot">-&gt;</span> districts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpDfZIYa/Zoning_Districts.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpOnufeX/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -982,10 +1058,24 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 </section>
 <section id="simplifying-data-1" class="slide level2">
 <h2>Simplifying Data</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A(("&lt;div style='width:5em;text-align:center'&gt;Identify&lt;/div&gt;")) --&gt; B(("&lt;div style='width:5em;text-align:center'&gt;Drop&lt;/div&gt;")) --&gt; C(("&lt;div style='width:5em;text-align:center'&gt;Check&lt;/div&gt;"))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="fragment">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href=""></a>districts <span class="sc">|&gt;</span></span>
-<span id="cb68-2"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate) <span class="sc">|&gt;</span></span>
-<span id="cb68-3"><a href=""></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len) <span class="ot">-&gt;</span> districts</span>
+<span id="cb68-2"><a href=""></a>  <span class="fu">select</span>(<span class="sc">-</span>Comment, <span class="sc">-</span>CreatedBy, <span class="sc">-</span>CreatedDat, <span class="sc">-</span>EditBy, <span class="sc">-</span>EditDate) <span class="sc">|&gt;</span></span>
+<span id="cb68-3"><a href=""></a>  <span class="fu">select</span>(<span class="sc">-</span>Shape__Are, <span class="sc">-</span>Shape__Len) <span class="ot">-&gt;</span> districts</span>
 <span id="cb68-4"><a href=""></a><span class="fu">head</span>(districts, <span class="at">n =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 1 feature and 7 fields
@@ -997,6 +1087,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 1        1 RO-2      &lt;NA&gt;       &lt;NA&gt;         No 2000-01-01
                               GlobalID                       geometry
 1 334799f0-fe38-46bf-97c2-260f5a036559 MULTIPOLYGON (((11773598 37...</code></pre>
+</div>
 </div>
 </div>
 </section>
@@ -1022,7 +1113,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href=""></a><span class="fu">plot</span>(districts[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-50-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-56-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="visualizing-overlays" class="slide level2">
 <h2>Visualizing Overlays</h2>
 <div class="cell" data-layout-align="center">
@@ -1034,7 +1125,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <span id="cb73-6"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-51-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-57-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section></section>
 <section>
 <section id="vector-operations" class="title-slide slide level1 center" data-background-color="black" data-background-image="media/contour.png" data-background-size="initial" data-background-position="right">
 <h1>Vector Operations</h1>
@@ -1057,7 +1148,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <span id="cb74-4"><a href=""></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpDfZIYa/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/57/_81c61111l10c9c_pt_bb7y80000gn/T/RtmpOnufeX/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING
@@ -1113,14 +1204,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb81-10"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">OneWay =</span> <span class="fu">factor</span>(OneWay), <span class="at">StreetType =</span> <span class="fu">factor</span>(StreetType)) <span class="ot">-&gt;</span> roads</span>
 <span id="cb81-11"><a href=""></a><span class="fu">summary</span>(roads)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>   FullName          OneWay                    StreetType      SpeedLimit   
- Length:29081       1   :    2   Alley              : 3139   Min.   : 0.00  
- Class :character   FT  : 3225   Artery             : 5201   1st Qu.:25.00  
- Mode  :character   TF  : 3148   Highway            :  384   Median :25.00  
-                    NA's:22706   Highway Interchange:   93   Mean   :25.17  
-                                 Private            : 1540   3rd Qu.:25.00  
-                                 Ramp               :  378   Max.   :55.00  
-                                 Secondary          :18346   NA's   :7959   
+<pre><code>      FullName     OneWay                    StreetType      SpeedLimit   
+ Length   :29081   1  :    2   Alley              : 3139   Min.   : 0.00  
+ N.unique : 4081   FT : 3225   Artery             : 5201   1st Qu.:25.00  
+ N.blank  :    0   TF : 3148   Highway            :  384   Median :25.00  
+ Min.nchar:    3   NAs:22706   Highway Interchange:   93   Mean   :25.17  
+ Max.nchar:   46               Private            : 1540   3rd Qu.:25.00  
+ NAs      : 4526               Ramp               :  378   Max.   :55.00  
+                               Secondary          :18346   NAs    :7959   
      Length                   geometry    
  Min.   :    2.943   LINESTRING   :29081  
  1st Qu.:  164.849   epsg:2284    :    0  
@@ -1141,14 +1232,14 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb83-4"><a href=""></a>  ) <span class="ot">-&gt;</span> highways</span>
 <span id="cb83-5"><a href=""></a><span class="fu">summary</span>(highways)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>   FullName          OneWay                  StreetType    SpeedLimit   
- Length:855         1   :  0   Alley              :  0   Min.   : 0.00  
- Class :character   FT  :416   Artery             :  0   1st Qu.:25.00  
- Mode  :character   TF  :408   Highway            :384   Median :25.00  
-                    NA's: 31   Highway Interchange: 93   Mean   :36.19  
-                               Private            :  0   3rd Qu.:55.00  
-                               Ramp               :378   Max.   :55.00  
-                               Secondary          :  0   NA's   :131    
+<pre><code>      FullName   OneWay                  StreetType    SpeedLimit   
+ Length   :855   1  :  0   Alley              :  0   Min.   : 0.00  
+ N.unique :170   FT :416   Artery             :  0   1st Qu.:25.00  
+ N.blank  :  0   TF :408   Highway            :384   Median :25.00  
+ Min.nchar:  3   NAs: 31   Highway Interchange: 93   Mean   :36.19  
+ Max.nchar: 46             Private            :  0   3rd Qu.:55.00  
+ NAs      : 18             Ramp               :378   Max.   :55.00  
+                           Secondary          :  0   NAs    :131    
      Length                  geometry  
  Min.   :   14.46   LINESTRING   :855  
  1st Qu.:  276.48   epsg:2284    :  0  
@@ -1164,7 +1255,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <h2>Plot It</h2>
 <p>Let’s color this based upon SpeedLimit</p>
 
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-58-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-64-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="visualizing-a-single-entity" class="slide level2 smaller">
 <h2>Visualizing A Single Entity</h2>
 <div class="columns">
@@ -1183,7 +1274,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="slides_files/figure-revealjs/unnamed-chunk-60-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
+<p><img data-src="slides_files/figure-revealjs/unnamed-chunk-66-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -1209,7 +1300,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb87"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href=""></a><span class="fu">plot</span>(theFan[<span class="st">"Name"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-62-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-68-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="zoning-categories" class="slide level2 smaller scrollable">
 <h2>Zoning Categories</h2>
 <p>26 zoning codes is too many to map. Make it a <code>factor</code> and collapse the levels with <code>fct_collapse()</code> (from <a href="https://dyerlabteaching.github.io/Factors/slides.html">Factors</a>): <em>New Level</em> = <em>Old Levels</em>.</p>
@@ -1259,22 +1350,22 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb89"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href=""></a><span class="fu">summary</span>(theFan)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>    OBJECTID           Name                  Category   Ordinance        
- Min.   :   5.0   R-7    :11   Business          :22   Length:91         
- 1st Qu.: 270.5   R-53   : 9   Institutional     : 1   Class :character  
- Median : 377.0   R-6    : 9   Industrial        : 7   Mode  :character  
- Mean   : 498.3   B-1    : 7   Residential       :46                     
- 3rd Qu.: 505.0   R-63   : 5   Residential Office: 4                     
- Max.   :1872.0   R-73   : 5   Transit-Oriented  : 2                     
-                  (Other):45   Urban Business    : 9                     
-  OrdinanceP         Conditiona          AdoptionDa           GlobalID        
- Length:91          Length:91          Min.   :2000-01-01   Length:91         
- Class :character   Class :character   1st Qu.:2000-01-01   Class :character  
- Mode  :character   Mode  :character   Median :2001-10-08   Mode  :character  
-                                       Mean   :2005-06-16                     
-                                       3rd Qu.:2008-02-18                     
-                                       Max.   :2020-02-24                     
-                                                                              
+<pre><code>    OBJECTID           Name                  Category      Ordinance 
+ Min.   :   5.0   R-7    :11   Business          :22   Length   :91  
+ 1st Qu.: 270.5   R-53   : 9   Institutional     : 1   N.unique :19  
+ Median : 377.0   R-6    : 9   Industrial        : 7   N.blank  : 0  
+ Mean   : 498.3   B-1    : 7   Residential       :46   Min.nchar: 8  
+ 3rd Qu.: 505.0   R-63   : 5   Residential Office: 4   Max.nchar:12  
+ Max.   :1872.0   R-73   : 5   Transit-Oriented  : 2   NAs      :41  
+                  (Other):45   Urban Business    : 9                 
+     OrdinanceP      Conditiona   AdoptionDa              GlobalID 
+ Length   : 91   Length   :91   Min.   :2000-01-01   Length   :91  
+ N.unique : 10   N.unique : 2   1st Qu.:2000-01-01   N.unique :91  
+ N.blank  :  0   N.blank  : 0   Median :2001-10-08   N.blank  : 0  
+ Min.nchar: 72   Min.nchar: 2   Mean   :2005-06-16   Min.nchar:36  
+ Max.nchar:140   Max.nchar: 3   3rd Qu.:2008-02-18   Max.nchar:36  
+ NAs      : 41                  Max.   :2020-02-24                 
+                                                                   
           geometry 
  MULTIPOLYGON : 4  
  POLYGON      :87  
@@ -1295,7 +1386,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb91-4"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-65-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-71-1.png" class="quarto-figure quarto-figure-center r-stretch" width="1152"></section>
 <section id="cropping-roads" class="slide level2">
 <h2>Cropping Roads</h2>
 <div class="cell" data-layout-align="center">
@@ -1303,7 +1394,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb92-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(fanRoads))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-66-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-72-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="selecting-a-single-zone" class="slide level2">
 <h2>Selecting a Single Zone</h2>
 <p>Add an attribute to the POLYGON’s indicating if the district is that big one in the middle of the plot. Let’s plot it to see what the ID is.</p>
@@ -1323,7 +1414,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb94-6"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-68-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-74-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="isolate-the-district" class="slide level2">
 <h2>Isolate the District</h2>
 <div class="cell" data-layout-align="center">
@@ -1331,7 +1422,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb95-2"><a href=""></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(target))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-69-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-75-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="section-12" class="slide level2">
 <h2>&nbsp;</h2>
 <p>Keep the roads that intersect the target with <code>st_filter()</code>.</p>
@@ -1397,7 +1488,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)</code></pre>
 <span id="cb98-5"><a href=""></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
-<img data-src="slides_files/figure-revealjs/unnamed-chunk-71-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
+<img data-src="slides_files/figure-revealjs/unnamed-chunk-77-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="joining-attributes-st_join" class="slide level2">
 <h2>Joining Attributes: <code>st_join()</code></h2>
 <p>Each road segment picks up the columns of the district(s) its geometry <em>intersects</em>.</p>
