@@ -228,13 +228,14 @@ Lines and polygons become really useful when we build them around real data.  He
 - `N`: The number of offspring (seeds) collected from that tree.
 - `Preliminary`: Whether it is one of a subset of 5 trees from each habitat.
 
-We will start with just the `Preliminary` trees.
+We will start with just the `Preliminary` trees.  While we are at it, let's sort them from south to north with `arrange()`.  This has to happen *before* `st_as_sf()`, since that function uses up the `Latitude` and `Longitude` columns to make the points.  Having the trees in order will come in handy when we make a transect below.
 
 ```{r}
 dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
 
 read_csv(dogwood_url) |>
   filter(Preliminary) |>
+  arrange(Latitude, Longitude) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) -> trees
 trees
 ```
@@ -303,11 +304,11 @@ hulls |>
 
 ### A Transect Corridor
 
-Finally, a transect running from the northernmost to the southernmost tree.  The `st_coordinates()` function returns the coordinates as a matrix, which we can use to find the two ends.
+Finally, a transect running from the southernmost to the northernmost tree.  Because we sorted the trees by latitude when we read them in, those are just the first and last rows, which we can grab with `slice()` (`n()` is the number of rows).  Then, as with the lines at the start of this topic, we combine the points and cast them into a `LINESTRING`.
 
 ```{r}
-y <- st_coordinates(trees)[, "Y"]
-trees[y == max(y) | y == min(y), ] |>
+trees |>
+  slice(c(1, n())) |>
   summarize() |>
   st_cast("LINESTRING") -> transect
 st_length(transect) |>

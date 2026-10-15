@@ -75,7 +75,7 @@ Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.p
 # Your code here
 ```
 
-7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates).  What are the `Tree` IDs at each end, and how long is it in km?
+7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: if you `arrange()` the trees by `Latitude` when you read them in, the ends are the first and last rows).  What are the `Tree` IDs at each end, and how long is it in km?
 
 ```{r}
 # Your code here

@@ -44,6 +44,7 @@ Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.p
 ```{r}
 read_csv(url) |>
   filter(Preliminary) |>
+  arrange(Latitude, Longitude) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) -> trees
 trees
 ```
@@ -106,11 +107,11 @@ ggplot() +
 
 > **Answer:** About 0.89 km² for `Native`, 4.57 km² for `Suburban`, and 3.06 km² for `Urban`.
 
-7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: `st_coordinates()` returns a matrix of the `X` and `Y` coordinates).  What are the `Tree` IDs at each end, and how long is it in km?
+7. Make a transect: a `LINESTRING` running from the northernmost to the southernmost tree (hint: if you `arrange()` the trees by `Latitude` when you read them in, the ends are the first and last rows).  What are the `Tree` IDs at each end, and how long is it in km?
 
 ```{r}
-y <- st_coordinates(trees)[, "Y"]
-ends <- trees[y == max(y) | y == min(y), ]
+trees |>
+  slice(c(1, n())) -> ends
 ends$Tree
 
 ends |>
@@ -125,14 +126,14 @@ st_length(transect) |>
 8. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
 
 ```{r}
-trees[order(y), ] |>
+trees |>
   summarize(do_union = FALSE) |>
   st_cast("LINESTRING") -> zigzag
 st_length(zigzag) |>
   set_units(km)
 ```
 
-> **Answer:** About 26.7 km.  A `LINESTRING` connects points in the order given, so sorting only by latitude makes the line zig-zag east and west between trees at similar latitudes (the suburban trees are spread out east to west).  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
+> **Answer:** About 26.7 km.  A `LINESTRING` connects points in the order given, so following the trees in order of latitude makes the line zig-zag east and west between trees at similar latitudes (the suburban trees are spread out east to west).  (`do_union = FALSE` keeps the points in order; the default union sorts them.)
 
 9. Buffer the transect by 500 m to make a *corridor*.  Make a single plot showing the hulls, the corridor, the neighborhoods, and the trees.
 

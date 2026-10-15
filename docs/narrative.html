@@ -476,13 +476,14 @@ Attaching package: 'maps'</code></pre>
 <li><code>N</code>: The number of offspring (seeds) collected from that tree.</li>
 <li><code>Preliminary</code>: Whether it is one of a subset of 5 trees from each habitat.</li>
 </ul>
-<p>We will start with just the <code>Preliminary</code> trees.</p>
+<p>We will start with just the <code>Preliminary</code> trees. While we are at it, let’s sort them from south to north with <code>arrange()</code>. This has to happen <em>before</em> <code>st_as_sf()</code>, since that function uses up the <code>Latitude</code> and <code>Longitude</code> columns to make the points. Having the trees in order will come in handy when we make a transect below.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>dogwood_url <span class="ot">&lt;-</span> <span class="st">"https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"</span></span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(dogwood_url) <span class="sc">|&gt;</span></span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Preliminary) <span class="sc">|&gt;</span></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"Longitude"</span>, <span class="st">"Latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>) <span class="ot">-&gt;</span> trees</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Latitude, Longitude) <span class="sc">|&gt;</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"Longitude"</span>, <span class="st">"Latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>) <span class="ot">-&gt;</span> trees</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 58 Columns: 7
 ── Column specification ────────────────────────────────────────────────────────
@@ -504,21 +505,21 @@ Geodetic CRS:  WGS 84
 # A tibble: 15 × 6
    Mother   Habitat  Tree        N Preliminary             geometry
  * &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt; &lt;lgl&gt;                &lt;POINT [°]&gt;
- 1 Cultivar Urban    102UWP     18 TRUE         (-77.4651 37.48038)
- 2 Cultivar Urban    103UWP     13 TRUE        (-77.46606 37.49982)
- 3 Cultivar Urban    105UWP     15 TRUE        (-77.47115 37.51072)
- 4 Cultivar Suburban 108UWP     18 TRUE         (-77.4995 37.43491)
- 5 Cultivar Urban    109UWP     24 TRUE        (-77.47308 37.49297)
+ 1 Native   Native   361PWP      8 TRUE        (-77.54097 37.38367)
+ 2 Native   Native   1040PWP     6 TRUE         (-77.53101 37.3894)
+ 3 Native   Native   1037PWP     7 TRUE        (-77.53136 37.39264)
+ 4 Native   Native   1033PWP    19 TRUE        (-77.53267 37.39687)
+ 5 Native   Native   1081PWP    19 TRUE         (-77.5384 37.39905)
  6 Cultivar Suburban 112UWP     16 TRUE        (-77.49156 37.41399)
- 7 Cultivar Suburban 116UWP     15 TRUE         (-77.5079 37.42863)
+ 7 Cultivar Suburban 134UWP     16 TRUE        (-77.54078 37.42677)
  8 Cultivar Suburban 120UWP     15 TRUE         (-77.5113 37.42788)
- 9 Cultivar Urban    125UWP     17 TRUE        (-77.45584 37.50948)
-10 Cultivar Suburban 134UWP     16 TRUE        (-77.54078 37.42677)
-11 Native   Native   1033PWP    19 TRUE        (-77.53267 37.39687)
-12 Native   Native   1037PWP     7 TRUE        (-77.53136 37.39264)
-13 Native   Native   1040PWP     6 TRUE         (-77.53101 37.3894)
-14 Native   Native   1081PWP    19 TRUE         (-77.5384 37.39905)
-15 Native   Native   361PWP      8 TRUE        (-77.54097 37.38367)</code></pre>
+ 9 Cultivar Suburban 116UWP     15 TRUE         (-77.5079 37.42863)
+10 Cultivar Suburban 108UWP     18 TRUE         (-77.4995 37.43491)
+11 Cultivar Urban    102UWP     18 TRUE         (-77.4651 37.48038)
+12 Cultivar Urban    109UWP     24 TRUE        (-77.47308 37.49297)
+13 Cultivar Urban    103UWP     13 TRUE        (-77.46606 37.49982)
+14 Cultivar Urban    125UWP     17 TRUE        (-77.45584 37.50948)
+15 Cultivar Urban    105UWP     15 TRUE        (-77.47115 37.51072)</code></pre>
 </div>
 </div>
 <p>Buffers and areas are measured in the units of the coordinate reference system, and degrees of longitude and latitude are not a fixed distance on the ground. So before building anything, we reproject the trees into UTM Zone 17N (EPSG 32617), whose units are meters.</p>
@@ -558,21 +559,21 @@ Projected CRS: WGS 84 / UTM zone 17N
 # A tibble: 15 × 6
    Mother   Habitat  Tree        N Preliminary                          geometry
  * &lt;chr&gt;    &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt; &lt;lgl&gt;                           &lt;POLYGON [m]&gt;
- 1 Cultivar Urban    102UWP     18 TRUE        ((812833.7 4154036, 812833.4 415…
- 2 Cultivar Urban    103UWP     13 TRUE        ((812667.7 4156191, 812667.3 415…
- 3 Cultivar Urban    105UWP     15 TRUE        ((812172.1 4157384, 812171.8 415…
- 4 Cultivar Suburban 108UWP     18 TRUE        ((809978.6 4148875, 809978.2 414…
- 5 Cultivar Urban    109UWP     24 TRUE        ((812075.4 4155407, 812075.1 415…
+ 1 Native   Native   361PWP      8 TRUE        ((806516.9 4143052, 806516.6 414…
+ 2 Native   Native   1040PWP     6 TRUE        ((807375.6 4143721, 807375.3 414…
+ 3 Native   Native   1037PWP     7 TRUE        ((807331.4 4144079, 807331.1 414…
+ 4 Native   Native   1033PWP    19 TRUE        ((807198.1 4144545, 807197.8 414…
+ 5 Native   Native   1081PWP    19 TRUE        ((806681.8 4144768, 806681.5 414…
  6 Cultivar Suburban 112UWP     16 TRUE        ((810767.8 4146580, 810767.5 414…
- 7 Cultivar Suburban 116UWP     15 TRUE        ((809260.9 4148151, 809260.6 414…
+ 7 Cultivar Suburban 134UWP     16 TRUE        ((806358.1 4147837, 806357.7 414…
  8 Cultivar Suburban 120UWP     15 TRUE        ((808963.1 4148056, 808962.7 414…
- 9 Cultivar Urban    125UWP     17 TRUE        ((813531 4157297, 813530.7 41572…
-10 Cultivar Suburban 134UWP     16 TRUE        ((806358.1 4147837, 806357.7 414…
-11 Native   Native   1033PWP    19 TRUE        ((807198.1 4144545, 807197.8 414…
-12 Native   Native   1037PWP     7 TRUE        ((807331.4 4144079, 807331.1 414…
-13 Native   Native   1040PWP     6 TRUE        ((807375.6 4143721, 807375.3 414…
-14 Native   Native   1081PWP    19 TRUE        ((806681.8 4144768, 806681.5 414…
-15 Native   Native   361PWP      8 TRUE        ((806516.9 4143052, 806516.6 414…</code></pre>
+ 9 Cultivar Suburban 116UWP     15 TRUE        ((809260.9 4148151, 809260.6 414…
+10 Cultivar Suburban 108UWP     18 TRUE        ((809978.6 4148875, 809978.2 414…
+11 Cultivar Urban    102UWP     18 TRUE        ((812833.7 4154036, 812833.4 415…
+12 Cultivar Urban    109UWP     24 TRUE        ((812075.4 4155407, 812075.1 415…
+13 Cultivar Urban    103UWP     13 TRUE        ((812667.7 4156191, 812667.3 415…
+14 Cultivar Urban    125UWP     17 TRUE        ((813531 4157297, 813530.7 41572…
+15 Cultivar Urban    105UWP     15 TRUE        ((812172.1 4157384, 812171.8 415…</code></pre>
 </div>
 </div>
 <p>Notice that each row keeps all of the tree’s data; only the geometry has changed. Each of these is 196,260 m², slightly less than <span class="math inline">\(\pi r^2 =\)</span> 196,350 m², because the circle is approximated by a polygon with many short straight sides.</p>
@@ -653,10 +654,10 @@ Projected CRS: WGS 84 / UTM zone 17N
 </section>
 <section id="a-transect-corridor" class="level3">
 <h3 class="anchored" data-anchor-id="a-transect-corridor">A Transect Corridor</h3>
-<p>Finally, a transect running from the northernmost to the southernmost tree. The <code>st_coordinates()</code> function returns the coordinates as a matrix, which we can use to find the two ends.</p>
+<p>Finally, a transect running from the southernmost to the northernmost tree. Because we sorted the trees by latitude when we read them in, those are just the first and last rows, which we can grab with <code>slice()</code> (<code>n()</code> is the number of rows). Then, as with the lines at the start of this topic, we combine the points and cast them into a <code>LINESTRING</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">st_coordinates</span>(trees)[, <span class="st">"Y"</span>]</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>trees[y <span class="sc">==</span> <span class="fu">max</span>(y) <span class="sc">|</span> y <span class="sc">==</span> <span class="fu">min</span>(y), ] <span class="sc">|&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>trees <span class="sc">|&gt;</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">n</span>())) <span class="sc">|&gt;</span></span>
 <span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>() <span class="sc">|&gt;</span></span>
 <span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_cast</span>(<span class="st">"LINESTRING"</span>) <span class="ot">-&gt;</span> transect</span>
 <span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="fu">st_length</span>(transect) <span class="sc">|&gt;</span></span>
@@ -702,18 +703,18 @@ Projected CRS: WGS 84 / UTM zone 17N
 <span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>lc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 105 × 7
-   Mother   Habitat Tree       N Preliminary Category    Proportion
-   &lt;chr&gt;    &lt;chr&gt;   &lt;chr&gt;  &lt;dbl&gt; &lt;lgl&gt;       &lt;chr&gt;            &lt;dbl&gt;
- 1 Cultivar Urban   102UWP    18 TRUE        Water           0     
- 2 Cultivar Urban   102UWP    18 TRUE        Developed       0.903 
- 3 Cultivar Urban   102UWP    18 TRUE        Barren          0     
- 4 Cultivar Urban   102UWP    18 TRUE        Forest          0.0971
- 5 Cultivar Urban   102UWP    18 TRUE        Shrub/Grass     0     
- 6 Cultivar Urban   102UWP    18 TRUE        Agriculture     0     
- 7 Cultivar Urban   102UWP    18 TRUE        Wetland         0     
- 8 Cultivar Urban   103UWP    13 TRUE        Water           0     
- 9 Cultivar Urban   103UWP    13 TRUE        Developed       1     
-10 Cultivar Urban   103UWP    13 TRUE        Barren          0     
+   Mother Habitat Tree        N Preliminary Category    Proportion
+   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;   &lt;dbl&gt; &lt;lgl&gt;       &lt;chr&gt;            &lt;dbl&gt;
+ 1 Native Native  361PWP      8 TRUE        Water          0.110  
+ 2 Native Native  361PWP      8 TRUE        Developed      0.00459
+ 3 Native Native  361PWP      8 TRUE        Barren         0      
+ 4 Native Native  361PWP      8 TRUE        Forest         0.786  
+ 5 Native Native  361PWP      8 TRUE        Shrub/Grass    0.00459
+ 6 Native Native  361PWP      8 TRUE        Agriculture    0      
+ 7 Native Native  361PWP      8 TRUE        Wetland        0.0956 
+ 8 Native Native  1040PWP     6 TRUE        Water          0      
+ 9 Native Native  1040PWP     6 TRUE        Developed      0      
+10 Native Native  1040PWP     6 TRUE        Barren         0      
 # ℹ 95 more rows</code></pre>
 </div>
 </div>
@@ -946,7 +947,7 @@ Projected CRS: WGS 84 / UTM zone 17N
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>districts <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="fu">file.path</span>(shp_dir, <span class="st">"Zoning_Districts.shp"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `Zoning_Districts' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpcHI6Ge/Zoning_Districts.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/Rtmpxq8IC1/Zoning_Districts.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 634 features and 14 fields
 Geometry type: MULTIPOLYGON
@@ -1072,7 +1073,7 @@ Projected CRS: NAD83 / Virginia South (ftUS)
 <span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Reading layer `tran_Carriageway' from data source 
-  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/RtmpcHI6Ge/Centerlines-shp/tran_Carriageway.shp' 
+  `/private/var/folders/ph/r0036_7d65x3k680vc73qbj40000gn/T/Rtmpxq8IC1/Centerlines-shp/tran_Carriageway.shp' 
   using driver `ESRI Shapefile'
 Simple feature collection with 29081 features and 25 fields
 Geometry type: LINESTRING

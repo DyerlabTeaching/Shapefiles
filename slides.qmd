@@ -128,10 +128,14 @@ lines
 
 ::: {.column width="50%"}
 
-Just like when we were working with `POINT` objects, we can use both built-in graphing approaches as well as `ggplot()` for visualizing.  Here I'm going to plot the two line objects using normal graphics. 
+We can visulize these via `geom_sf()` or `plot()`.
 
 ```{r eval=FALSE}
-plot(lines["Data"], col = c("red", "green"), lwd = 2)
+plot(
+  lines["Data"],
+  col = c("red", "green"),
+  lwd = 2
+)
 ```
 :::
 
@@ -142,7 +146,11 @@ plot(lines["Data"], col = c("red", "green"), lwd = 2)
 &nbsp;
 
 ```{r echo=FALSE}
-plot(lines["Data"], col = c("red", "green"), lwd = 2)
+plot(
+  lines["Data"],
+  col = c("red", "green"),
+  lwd = 2
+)
 ```
 :::
 
@@ -155,20 +163,23 @@ plot(lines["Data"], col = c("red", "green"), lwd = 2)
 
 ## Operations on `LINESTRING` Objects
 
-Physical length of the `LINESTRING` objects
+Physical length of the `LINESTRING` objects.  
 
 ```{r}
 st_length(lines)
 ```
 
-:::{.fragment}
+
+## Operations on `LINESTRING` Objects
+
+
 The bounding box around all the lines.
 
 ```{r}
 st_bbox(lines)
 ```
 
-:::{.fragment}
+## Operations on `LINESTRING` Objects
 
 The area of the convex hull encompassing *all* the lines.
 ```{r}
@@ -179,8 +190,7 @@ lines |>
   st_area() |>
   set_units(km^2)
 ```
-:::
-:::
+
 
 ## Textual Versions of `geometry`
 
@@ -202,15 +212,21 @@ lines$geometry[1] |> st_as_text()
 
 ## Polygons
 
-Polygons are simply lines whose first and last coordinate are exactly the same
+Polygons are simply lines whose first and last coordinate are exactly the same.
+
+:::{.fragment}
 
 ```{r}
 df.p <- df[c(1:5, 1, 6:10, 6), ]
 df.p
 ```
-
+:::
 
 ## Polygon *de novo* Creation
+
+Use `st_cast()` as before to make groups of points into a polygon.
+
+:::{.fragment}
 
 ```{r}
 df |>
@@ -219,6 +235,8 @@ df |>
   summarize(Data = mean(Data)) |>
   st_cast("POLYGON") -> polygons
 ```
+
+:::
 
 
 ## &nbsp;
@@ -239,23 +257,31 @@ ggplot(polygons) +
 
 ## Polygons From Data Frames
 
+The `ggplot` library provides access to map data as well.
+
 ```{r}
 map_data("county", "virginia") |>
-  dplyr::select(
+  select(
     Longitude = long,
     Latitude = lat,
     group,
     County = subregion
   ) -> va_counties
+```
+
+## Polygons From Data Frames
+
+```{r}
 head(va_counties)
 ```
+
 
 ## 
 
 ```{r fig.width=12}
 ggplot(va_counties, aes(Longitude, Latitude)) +
   geom_point(size = 0.25) +
-  coord_quickmap()
+  coord_quickmap() # roughly spherical projection
 ```
 
 
@@ -284,7 +310,7 @@ ggplot(va_counties, aes(Longitude, Latitude)) +
 ```
 
 
-## 
+## Combining polygons and `sf` objects
 
 ```{r}
 ggplot() +
@@ -308,12 +334,14 @@ ggplot() +
 
 ## Dogwood Trees
 
-Maternal dogwood trees sampled from the city of Richmond south to Pocahontas State Park.  We start with the 15 `Preliminary` trees (5 per `Habitat`).
+Maternal dogwood trees sampled from the city of Richmond south to Pocahontas State Park.  We start with the 15 `Preliminary` trees (5 per `Habitat`), sorted south to north.
 
 ```{r}
 dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
 read_csv(dogwood_url) |>
   filter(Preliminary) |>
+  select(-Preliminary) |>
+  arrange(Latitude, Longitude) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
   st_transform(crs = 32617) -> trees
 ```
@@ -389,15 +417,32 @@ st_area(hulls) |> set_units(km^2)
 
 ## A Transect Corridor
 
+Trees are sorted south to north, so the ends are the first and last rows (the function `slice()` allows us to pull specific rows based on index).
+
 ```{r}
-y <- st_coordinates(trees)[, "Y"]
-trees[y == max(y) | y == min(y), ] |>
+trees |>
+  slice(c(1, n())) |>
   summarize() |>
   st_cast("LINESTRING") -> transect
-st_length(transect) |> set_units(km)
-transect |> st_buffer(dist = 250) -> corridor
 ```
 
+
+## A Transect Corridor
+
+How long is the transect?
+
+```{r}
+st_length(transect) |>
+  set_units(km)
+```
+
+## A Transect Coorridor
+
+Let's visualize it by adding a quick buffer around it.
+
+```{r}
+transect |> st_buffer(dist = 250) -> corridor
+```
 
 ## &nbsp;
 
