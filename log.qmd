@@ -8,7 +8,7 @@ format: dyerlab-html
 
 ## Entries
 
-- 2026.10.15: 
+- 2026.10.15: Finished up to Activity 1.  Start at Activity 2 next.
 - 2026.10.13: Started and got to [here](https://dyerlabteaching.github.io/Vector-Data/slides.html#/textual-versions-of-geometry).  We need to stop and work on incremental progress.
 
 
