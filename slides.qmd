@@ -226,6 +226,12 @@ df.p
 
 Use `st_cast()` as before to make groups of points into a polygon.
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Load</div>")) --> B(("<div style='width:5em;text-align:center'>Convert</div>")) --> C(("<div style='width:5em;text-align:center'>Data</div>")) --> D(("<div style='width:5em;text-align:center'>Cast</div>"))
+```
+
 :::{.fragment}
 
 ```{r}
@@ -259,6 +265,14 @@ ggplot(polygons) +
 
 The `ggplot` library provides access to map data as well.
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Load</div>")) --> B(("<div style='width:5em;text-align:center'>Rename</div>"))
+```
+
+:::{.fragment}
+
 ```{r}
 map_data("county", "virginia") |>
   select(
@@ -268,6 +282,8 @@ map_data("county", "virginia") |>
     County = subregion
   ) -> va_counties
 ```
+
+:::
 
 ## Polygons From Data Frames
 
@@ -336,6 +352,14 @@ ggplot() +
 
 Maternal dogwood trees sampled from the city of Richmond south to Pocahontas State Park.  We start with the 15 `Preliminary` trees (5 per `Habitat`), sorted south to north.
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Load</div>")) --> B(("<div style='width:5em;text-align:center'>Filter</div>")) --> C(("<div style='width:5em;text-align:center'>Sort</div>")) --> D(("<div style='width:5em;text-align:center'>Convert</div>")) --> E(("<div style='width:5em;text-align:center'>Project</div>"))
+```
+
+:::{.fragment}
+
 ```{r}
 dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
 read_csv(dogwood_url) |>
@@ -345,6 +369,8 @@ read_csv(dogwood_url) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
   st_transform(crs = 32617) -> trees
 ```
+
+:::
 
 :::{.fragment}
 <font color="red">Buffers & areas use the CRS units: reproject to meters (UTM 17N) first!</font>
@@ -388,6 +414,14 @@ pi * 250^2
 
 `summarize()` on an `sf` object unions the geometries in each group.
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Group</div>")) --> B(("<div style='width:5em;text-align:center'>Union</div>")) --> C(("<div style='width:5em;text-align:center'>Measure</div>"))
+```
+
+:::{.fragment}
+
 ```{r}
 nbhd |>
   group_by(Habitat) |>
@@ -396,6 +430,8 @@ habitat_nbhd |>
   st_area() |>
   set_units(km^2)
 ```
+
+:::
 
 :::{.fragment}
 Five buffers would be `r round( 5 * pi * 250^2 / 1e6, 2 )` km²; overlaps are only counted once.
@@ -406,6 +442,14 @@ Five buffers would be `r round( 5 * pi * 250^2 / 1e6, 2 )` km²; overlaps are on
 
 The smallest convex polygon around a set of points (a rubber band).
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Group</div>")) --> B(("<div style='width:5em;text-align:center'>Union</div>")) --> C(("<div style='width:5em;text-align:center'>Hull</div>")) --> D(("<div style='width:5em;text-align:center'>Measure</div>"))
+```
+
+:::{.fragment}
+
 ```{r}
 trees |>
   group_by(Habitat) |>
@@ -413,6 +457,8 @@ trees |>
   st_convex_hull() -> hulls
 st_area(hulls) |> set_units(km^2)
 ```
+
+:::
 
 
 ## A Transect Corridor
@@ -668,12 +714,22 @@ names(districts)
 
 ## Simplifying Data
 
+```{mermaid}
+%%| echo: false
+flowchart LR
+  A(("<div style='width:5em;text-align:center'>Identify</div>")) --> B(("<div style='width:5em;text-align:center'>Drop</div>")) --> C(("<div style='width:5em;text-align:center'>Check</div>"))
+```
+
+:::{.fragment}
+
 ```{r}
 districts |>
-  dplyr::select(-Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate) |>
-  dplyr::select(-Shape__Are, -Shape__Len) -> districts
+  select(-Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate) |>
+  select(-Shape__Are, -Shape__Len) -> districts
 head(districts, n = 1)
 ```
+
+:::
 
 
 ## District Codes

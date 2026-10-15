@@ -5,7 +5,6 @@ project:
   resources:
     - media/
     - get_landcover.R
-    - data/
 
 format:
   dyerlab-narrative-html: default
