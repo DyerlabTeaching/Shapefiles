@@ -42,8 +42,8 @@ Keep the [`sf` cheatsheet](https://github.com/rstudio/cheatsheets/blob/main/sf.p
 1. Read in the data, keep only the `Preliminary` trees, and convert them into an `sf` object of `POINT`s.  Make sure you give it the correct `crs`.
 
 ```{r}
-read_csv( url ) %>%
-  filter( Preliminary ) %>%
+read_csv( url ) |>
+  filter( Preliminary ) |>
   st_as_sf( coords = c("Longitude", "Latitude"),
             crs = 4326 ) -> trees
 trees
@@ -52,7 +52,7 @@ trees
 2. We are going to measure distances and areas, so reproject the trees into UTM Zone 17N (`EPSG:32617`), whose units are meters.  Show that the CRS has changed.
 
 ```{r}
-trees %>%
+trees |>
   st_transform( crs = 32617 ) -> trees
 st_crs( trees )$Name
 ```
@@ -68,7 +68,7 @@ ggplot( trees ) +
 4. In class we used 250 m neighborhoods.  Here, define each tree's *neighborhood* as everything within **500 m** of it.  Use `st_buffer()` to make a polygon around each tree.  What is the area of one neighborhood, and how does it compare to $\pi r^2$?
 
 ```{r}
-trees %>%
+trees |>
   st_buffer( dist = 500 ) -> nbhd
 st_area( nbhd[1, ] )
 pi * 500^2
@@ -79,10 +79,10 @@ pi * 500^2
 5. Union the neighborhoods into a single polygon for each `Habitat`.  What is the area of each in km²?  Why is it less than five times the area of a single neighborhood (and why is it *much* less for one of the habitats)?
 
 ```{r}
-nbhd %>%
-  group_by( Habitat ) %>%
+nbhd |>
+  group_by( Habitat ) |>
   summarize() -> habitat_nbhd
-habitat_nbhd %>%
+habitat_nbhd |>
   mutate( Area = set_units( st_area( habitat_nbhd ), km^2 ) )
 5 * pi * 500^2 / 1e6
 ```
@@ -92,11 +92,11 @@ habitat_nbhd %>%
 6. Make the convex hull around the trees in each `Habitat`, and find their areas in km².  Make a plot of the hulls with the trees on top.
 
 ```{r}
-trees %>%
-  group_by( Habitat ) %>%
-  summarize() %>%
+trees |>
+  group_by( Habitat ) |>
+  summarize() |>
   st_convex_hull() -> hulls
-hulls %>%
+hulls |>
   mutate( Area = set_units( st_area( hulls ), km^2 ) )
 
 ggplot() +
@@ -114,10 +114,10 @@ y <- st_coordinates( trees )[ , "Y" ]
 ends <- trees[ y == max( y ) | y == min( y ), ]
 ends$Tree
 
-ends %>%
-  summarize() %>%
+ends |>
+  summarize() |>
   st_cast( "LINESTRING" ) -> transect
-st_length( transect ) %>%
+st_length( transect ) |>
   set_units( km )
 ```
 
@@ -126,10 +126,10 @@ st_length( transect ) %>%
 8. What would happen if, instead, you connected *all* of the trees into one `LINESTRING` in order from south to north?  Make it, measure its length, and explain why it is so different from the transect.
 
 ```{r}
-trees[ order( y ), ] %>%
-  summarize( do_union = FALSE ) %>%
+trees[ order( y ), ] |>
+  summarize( do_union = FALSE ) |>
   st_cast( "LINESTRING" ) -> zigzag
-st_length( zigzag ) %>%
+st_length( zigzag ) |>
   set_units( km )
 ```
 
@@ -138,7 +138,7 @@ st_length( zigzag ) %>%
 9. Buffer the transect by 500 m to make a *corridor*.  Make a single plot showing the hulls, the corridor, the neighborhoods, and the trees.
 
 ```{r}
-transect %>%
+transect |>
   st_buffer( dist = 500 ) -> corridor
 
 ggplot() +
@@ -177,13 +177,13 @@ head( lc )
 11. Make a table of the average proportion of each land cover category in each `Habitat` (one column for each `Habitat`).
 
 ```{r}
-lc %>%
-  group_by( Habitat, Category ) %>%
+lc |>
+  group_by( Habitat, Category ) |>
   summarize( Proportion = mean( Proportion ), .groups = "drop" ) -> habitat_lc
 
-habitat_lc %>%
+habitat_lc |>
   pivot_wider( names_from = Habitat,
-               values_from = Proportion ) %>%
+               values_from = Proportion ) |>
   knitr::kable( digits = 3 )
 ```
 
@@ -203,12 +203,12 @@ ggplot( habitat_lc,
 13. Get the land cover for the transect corridor and add it to your table as another column.  Does the transect represent the landscape the trees actually live in?
 
 ```{r}
-corridor %>%
-  mutate( Habitat = "Transect" ) %>%
-  get_landcover() %>%
-  bind_rows( habitat_lc ) %>%
+corridor |>
+  mutate( Habitat = "Transect" ) |>
+  get_landcover() |>
+  bind_rows( habitat_lc ) |>
   pivot_wider( names_from = Habitat,
-               values_from = Proportion ) %>%
+               values_from = Proportion ) |>
   knitr::kable( digits = 3 )
 ```
 
@@ -217,14 +217,14 @@ corridor %>%
 14. Compare your 500 m results to the 250 m neighborhoods we used in class.  Does the size of the neighborhood change the picture?  Which habitat changes the most, and why might that be?
 
 ```{r}
-trees %>%
-  st_buffer( dist = 250 ) %>%
-  get_landcover() %>%
-  group_by( Habitat, Category ) %>%
-  summarize( P250 = mean( Proportion ), .groups = "drop" ) %>%
-  left_join( habitat_lc %>% rename( P500 = Proportion ),
-             by = c("Habitat", "Category") ) %>%
-  filter( Category %in% c("Developed", "Forest", "Wetland") ) %>%
+trees |>
+  st_buffer( dist = 250 ) |>
+  get_landcover() |>
+  group_by( Habitat, Category ) |>
+  summarize( P250 = mean( Proportion ), .groups = "drop" ) |>
+  left_join( habitat_lc |> rename( P500 = Proportion ),
+             by = c("Habitat", "Category") ) |>
+  filter( Category %in% c("Developed", "Forest", "Wetland") ) |>
   knitr::kable( digits = 3 )
 ```
 

@@ -65,7 +65,7 @@ df
 To make them into `sf` `POINT` objects, use `st_as_sf()` as normal.
 
 ```{r}
-df %>%
+df |>
   st_as_sf( coords = c("Longitude", "Latitude"), crs=4326 ) -> pts
 pts
 ```
@@ -123,10 +123,10 @@ ggplot( pts ) +
 To make `sf` as `LINESTRING` we can group by the id value and then we need to summarize the `Data` component, then cast it to a Linestring.
 
 ```{r}
-df %>%
-  st_as_sf( coords = c("Longitude", "Latitude"), crs=4326 ) %>%
-  group_by( id ) %>%
-  summarize( Data = mean( Data ) ) %>%
+df |>
+  st_as_sf( coords = c("Longitude", "Latitude"), crs=4326 ) |>
+  group_by( id ) |>
+  summarize( Data = mean( Data ) ) |>
   st_cast("LINESTRING") -> lines 
 ```
 
@@ -194,10 +194,10 @@ st_bbox( lines )
 The area of the convex hull encompassing *all* the lines.
 ```{r}
 library( units )
-lines %>% 
-  st_union() %>% 
-  st_convex_hull() %>% 
-  st_area() %>%
+lines |> 
+  st_union() |> 
+  st_convex_hull() |> 
+  st_area() |>
   set_units( km^2 )
 ```
 :::
@@ -209,7 +209,7 @@ Any geometry can be written out as *Well Known Text* (WKT), a plain-text descrip
 
 
 ```{r}
-lines$geometry[1] %>% st_as_text()
+lines$geometry[1] |> st_as_text()
 ```
 
 
@@ -234,10 +234,10 @@ df.p
 ## Polygon *de novo* Creation
 
 ```{r}
-df %>%
-  st_as_sf( coords = c("Longitude", "Latitude"), crs=4326 ) %>%
-  group_by( id ) %>%
-  summarize( Data = mean( Data ) ) %>%
+df |>
+  st_as_sf( coords = c("Longitude", "Latitude"), crs=4326 ) |>
+  group_by( id ) |>
+  summarize( Data = mean( Data ) ) |>
   st_cast("POLYGON") -> polygons
 ```
 
@@ -260,7 +260,7 @@ ggplot( polygons ) +
 ## Polygons From Data Frames
 
 ```{r}
-map_data( "county", "virginia") %>%
+map_data( "county", "virginia") |>
   dplyr::select( Longitude = long,
                  Latitude = lat,
                  group,
@@ -280,8 +280,8 @@ ggplot( va_counties, aes( Longitude, Latitude) ) +
 ##
 
 ```{r}
-va_counties %>%
-  filter( County %in%  c("hanover","henrico") ) %>%
+va_counties |>
+  filter( County %in%  c("hanover","henrico") ) |>
   ggplot( aes(Longitude, Latitude) ) + 
   geom_polygon( aes( fill = County), alpha=0.1 ) +
   geom_point( aes( color = County) ) +
@@ -323,9 +323,9 @@ Maternal dogwood trees sampled from the city of Richmond south to Pocahontas Sta
 
 ```{r}
 dogwood_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_Dogwoods.csv"
-read_csv( dogwood_url ) %>%
-  filter( Preliminary ) %>%
-  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) %>%
+read_csv( dogwood_url ) |>
+  filter( Preliminary ) |>
+  st_as_sf( coords = c("Longitude", "Latitude"), crs = 4326 ) |>
   st_transform( crs = 32617 ) -> trees
 ```
 
@@ -353,9 +353,9 @@ ggplot( trees ) + geom_sf( aes( color = Habitat ), size = 4 ) + coord_sf()
 Everything within some distance of a feature.  Buffering a `POINT` makes a `POLYGON`.
 
 ```{r}
-trees %>%
+trees |>
   st_buffer( dist = 250 ) -> nbhd
-st_area( nbhd ) %>% head( n = 3 )
+st_area( nbhd ) |> head( n = 3 )
 ```
 
 :::{.fragment}
@@ -372,11 +372,11 @@ pi * 250^2
 `summarize()` on an `sf` object unions the geometries in each group.
 
 ```{r}
-nbhd %>%
-  group_by( Habitat ) %>%
+nbhd |>
+  group_by( Habitat ) |>
   summarize() -> habitat_nbhd
-habitat_nbhd %>%
-  st_area() %>% set_units( km^2 )
+habitat_nbhd |>
+  st_area() |> set_units( km^2 )
 ```
 
 :::{.fragment}
@@ -389,11 +389,11 @@ Five buffers would be `r round( 5 * pi * 250^2 / 1e6, 2 )` km²; overlaps are on
 The smallest convex polygon around a set of points (a rubber band).
 
 ```{r}
-trees %>%
-  group_by( Habitat ) %>%
-  summarize() %>%
+trees |>
+  group_by( Habitat ) |>
+  summarize() |>
   st_convex_hull() -> hulls
-st_area( hulls ) %>% set_units( km^2 )
+st_area( hulls ) |> set_units( km^2 )
 ```
 
 
@@ -401,11 +401,11 @@ st_area( hulls ) %>% set_units( km^2 )
 
 ```{r}
 y <- st_coordinates( trees )[ , "Y" ]
-trees[ y == max( y ) | y == min( y ), ] %>%
-  summarize() %>%
+trees[ y == max( y ) | y == min( y ), ] |>
+  summarize() |>
   st_cast( "LINESTRING" ) -> transect
-st_length( transect ) %>% set_units( km )
-transect %>% st_buffer( dist = 250 ) -> corridor
+st_length( transect ) |> set_units( km )
+transect |> st_buffer( dist = 250 ) -> corridor
 ```
 
 
@@ -447,7 +447,7 @@ The ESRI *Shapefile* is a non-standardized format for packaging vector based dat
 However, it is not actually a file but it is a collection of files, which may (or may not) expand directly in the folder or within a subfolder.
 
 
-![](media/flickr_50540213032.jpg)
+![](media/flickr_50540213032.jpg){fig-alt="A file listing showing Zoning_Districts.cpg, .dbf, .prj, .shp, and .shx files, and a folder named Centerlines-shp."}
 
 
 ## Archived ZIP Files.
@@ -498,12 +498,12 @@ unzip( file.path( shp_dir, "Roads.zip" ), exdir = shp_dir )
 ## File Components
 
 
-![](media/flickr_54843115636.jpg)
+![](media/flickr_54843115636.jpg){fig-alt="A project folder listing showing Districts.zip and Roads.zip, the unzipped Centerlines-shp folder, and the five Zoning_Districts component files (.cpg, .dbf, .prj, .shp, .shx) with their sizes."}
 
 
 ## The Projection File
 
-![](media/flickr_50540256782.jpg)
+![](media/flickr_50540256782.jpg){fig-alt="The Zoning_Districts.prj file open in RStudio, showing the well-known-text definition of NAD83 Virginia South (US feet): a Lambert Conformal Conic projection on the GRS 1980 spheroid."}
 
 ## Loading A Shapefile
 
@@ -530,8 +530,8 @@ names( districts )
 ## Simplifying Data
 
 ```{r}
-districts %>% 
-  dplyr::select( -Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate ) %>%
+districts |> 
+  dplyr::select( -Comment, -CreatedBy, -CreatedDat, -EditBy, -EditDate ) |>
   dplyr::select( -Shape__Are, -Shape__Len) -> districts
 head( districts, n=1)
 ```
@@ -540,7 +540,7 @@ head( districts, n=1)
 ## District Codes
 
 ```{r}
-districts$Name %>% unique() %>% sort()
+districts$Name |> unique() |> sort()
 ```
 
 
@@ -604,7 +604,7 @@ st_crs( road.shapefile ) == st_crs( districts )
 If they differed, one could do something like:
 
 ```{r eval=FALSE}
-road.shapefile %>%
+road.shapefile |>
   st_transform( crs = st_crs( districts ) ) -> road.shapefile
 ```
 :::
@@ -619,10 +619,10 @@ road.shapefile %>%
 ## Data Cleanup
 
 ```{r}
-road.shapefile %>%
+road.shapefile |>
   dplyr::select( FullName, OneWay, StreetType,
                  SpeedLimit = PostedSpee, Length = SHAPE_Leng,
-                 geometry) %>%
+                 geometry) |>
   mutate( OneWay = factor( OneWay ),
           StreetType = factor( StreetType) ) -> roads
 summary( roads )
@@ -632,7 +632,7 @@ summary( roads )
 
 ## Visualizing: Filter Highways & Plot
 ```{r}
-roads %>%
+roads |>
   filter( StreetType %in% c("Highway", 
                             "Highway Interchange",
                             "Ramp")) -> highways
@@ -658,8 +658,8 @@ plot( highways["SpeedLimit"], lwd=4 )
 ::: {.column width="50%"}
 ### Using Normal Filtering
 ```{r eval=FALSE}
-roads %>% 
-  filter( FullName == "Three Chopt Road") %>%
+roads |> 
+  filter( FullName == "Three Chopt Road") |>
   ggplot() + 
   geom_sf( aes(color=SpeedLimit), 
            lwd=2) + 
@@ -669,8 +669,8 @@ roads %>%
 
 ::: {.column width="50%"}
 ```{r echo=FALSE}
-roads %>% 
-  filter( FullName == "Three Chopt Road") %>%
+roads |> 
+  filter( FullName == "Three Chopt Road") |>
   ggplot() + geom_sf(aes(color=SpeedLimit), lwd=2) + coord_sf() + theme(axis.text.x = element_text(angle = 45) )
 ```
 
@@ -689,12 +689,12 @@ roads %>%
 Let's grab a bit of zoning from *The Fan*
 
 ```{r}
-districts %>%
-  filter( OBJECTID == 368 ) %>%
-  st_buffer(dist = 1500) %>%
+districts |>
+  filter( OBJECTID == 368 ) |>
+  st_buffer(dist = 1500) |>
   st_bbox() -> fan_bbox
 
-districts %>%
+districts |>
   st_crop( fan_bbox ) -> theFan 
 ```
 
@@ -712,10 +712,10 @@ plot( theFan["Name"])
 ```{r}
 zone_url <- "https://dyerlabteaching.github.io/CourseData/Spatial/Richmond_ZoningCodes.csv"
 
-theFan %>%
+theFan |>
   left_join( read_csv( zone_url ),
-             by="Name") %>%
-  mutate( Category = factor( Category) ) %>%
+             by="Name") |>
+  mutate( Category = factor( Category) ) |>
   select( OBJECTID, 
           Name, 
           Category, 
@@ -734,7 +734,7 @@ ggplot( theFan ) + geom_sf( aes( fill=Category)) +
 ## Cropping Roads
 
 ```{r}
-roads %>% st_crop( st_bbox( theFan )) -> fanRoads
+roads |> st_crop( st_bbox( theFan )) -> fanRoads
 plot( st_geometry( fanRoads ))
 ```
 
@@ -745,7 +745,7 @@ plot( st_geometry( fanRoads ))
 Add an attribute to the POLYGON's indicating if the district is that big one in the middle of the plot.  Let's plot it to see what the ID is.
 
 ```{r}
-theFan %>%
+theFan |>
   mutate( Target = ifelse( OBJECTID == 368, 
                            TRUE, 
                            FALSE) ) -> theFan
@@ -754,7 +754,7 @@ theFan %>%
 
 ## Plot it
 ```{r}
-theFan %>%
+theFan |>
   ggplot() + 
   geom_sf( aes(fill=Target) ) + 
   geom_sf_text( aes(label=OBJECTID), size=3 ) +
@@ -777,18 +777,18 @@ plot( st_geometry( target ) )
 Keep the roads that intersect the target with `st_filter()`.
 
 ```{r}
-fanRoads %>%
+fanRoads |>
   st_filter( target ) -> targetRoads
-targetRoads %>%
-  st_drop_geometry() %>% select( `Street Name` = FullName ) %>%
-  distinct() %>% arrange( `Street Name` )
+targetRoads |>
+  st_drop_geometry() |> select( `Street Name` = FullName ) |>
+  distinct() |> arrange( `Street Name` )
 ```
 
 
 ## &nbsp;
 
 ```{r}
-targetRoads %>%
+targetRoads |>
   ggplot() +
   geom_sf( data=target  ) +
   geom_sf( color="darkgreen" ) + theme_void()
@@ -801,10 +801,10 @@ targetRoads %>%
 Like `left_join()`, but rows match where geometries *intersect*.
 
 ```{r}
-fanRoads %>%
-  st_join( theFan %>% select( Category ) ) %>%
-  st_drop_geometry() %>%
-  count( Category, sort = TRUE ) %>% head()
+fanRoads |>
+  st_join( theFan |> select( Category ) ) |>
+  st_drop_geometry() |>
+  count( Category, sort = TRUE ) |> head()
 ```
 
 
@@ -813,9 +813,9 @@ fanRoads %>%
 Keep only the *parts* that overlap; e.g., km of road inside the target.
 
 ```{r}
-fanRoads %>%
-  st_intersection( st_geometry( target ) ) %>%
-  st_length() %>% sum() %>% set_units( km )
+fanRoads |>
+  st_intersection( st_geometry( target ) ) |>
+  st_length() |> sum() |> set_units( km )
 ```
 
 
@@ -850,11 +850,11 @@ lc
 ## Summarize by Habitat
 
 ```{r}
-lc %>%
-  group_by( Habitat, Category ) %>%
+lc |>
+  group_by( Habitat, Category ) |>
   summarize( Proportion = mean( Proportion ), .groups = "drop" ) -> habitat_lc
-habitat_lc %>%
-  pivot_wider( names_from = Habitat, values_from = Proportion ) %>%
+habitat_lc |>
+  pivot_wider( names_from = Habitat, values_from = Proportion ) |>
   knitr::kable( digits = 3 )
 ```
 

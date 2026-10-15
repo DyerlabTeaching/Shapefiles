@@ -10,7 +10,7 @@
 
 According to the artificial intelligence ChatGPT, a shapefile is defined in a recent Tweet on [#gischat](https://twitter.com/search?q=%23gischat&src=typed_query) as:
 
-![](https://dyerlabteaching.github.io/Shapefiles/media/shapefile_definition_chatGPT3.png)
+![A #gischat tweet quoting ChatGPT: "In conclusion, the shapefile is an awful data format because of its limited capabilities, fragmented data, poor data quality, inefficient data storage, and limited interoperability. These factors make it difficult to work with shapefiles and can result in lost or incomplete data."](https://dyerlabteaching.github.io/Shapefiles/media/shapefile_definition_chatGPT3.png)
 
 That being said, one of the more popular corporate GIS software packages uses and abuses this data format and it is important to know how to work in this mixed environment.
 
