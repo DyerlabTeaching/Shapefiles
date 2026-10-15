@@ -729,12 +729,12 @@ road.shapefile <- st_read(file.path(
 ))
 ```
 
-:::{.fragment}
+## Secondary Vector Data Set
 
 ```{r}
 names(road.shapefile)
 ```
-:::
+
 
 ## Check Projections
 
@@ -761,11 +761,11 @@ road.shapefile |>
 
 
 
-## Data Cleanup
+## Data Cleanup {.scrollable .smaller}
 
 ```{r}
 road.shapefile |>
-  dplyr::select(
+  select(
     FullName,
     OneWay,
     StreetType,
@@ -858,7 +858,7 @@ plot(theFan["Name"])
 ```
 
 
-## Zoning Categories {.smaller}
+## Zoning Categories {.smaller .scrollable}
 
 `r length( unique( theFan$Name ) )` zoning codes is too many to map.  Make it a `factor` and collapse the levels with `fct_collapse()` (from [Factors](https://dyerlabteaching.github.io/Factors/slides.html)): *New Level* = *Old Levels*.
 
@@ -902,6 +902,13 @@ theFan |>
   ) |>
   select(OBJECTID, Name, Category, everything()) -> theFan
 ```
+
+## &nbsp;
+
+```{r}
+summary(theFan)
+```
+
 
 ## &nbsp;
 
